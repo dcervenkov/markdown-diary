@@ -13,8 +13,26 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
 from PyQt5 import QtWebKit
 
-import mistune
 from markdownhighlighter import MarkdownHighlighter
+
+import mistune
+import pygments
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import html
+
+class HighlightRenderer(mistune.Renderer):
+    def block_code(self, code, lang):
+        if not lang:
+            return '\n<pre><code>%s</code></pre>\n' % \
+                mistune.escape(code)
+        try:
+            lexer = get_lexer_by_name(lang, stripall=True)
+        except pygments.util.ClassNotFound:
+            return '\n<pre><code>%s</code></pre>\n' % \
+                mistune.escape(code)
+
+        formatter = html.HtmlFormatter()
+        return pygments.highlight(code, lexer, formatter)
 
 
 class Main(QtWidgets.QMainWindow):
@@ -22,7 +40,10 @@ class Main(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
 
         QtWidgets.QMainWindow.__init__(self, parent)
-        self.toMarkdown = mistune.Markdown()
+
+        renderer = HighlightRenderer()
+
+        self.toMarkdown = mistune.Markdown(renderer=renderer)
         self.initUI()
 
     def initUI(self):
@@ -83,6 +104,7 @@ class Main(QtWidgets.QMainWindow):
 
         css_include = """
 <link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-markdown.css">
+<link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-pygments.css">
 <style>
     .markdown-body {
         box-sizing: border-box;
