@@ -11,6 +11,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
+from PyQt5 import QtWebKit
 
 import mistune
 
@@ -31,6 +32,11 @@ class Main(QtWidgets.QMainWindow):
         self.text = QtWidgets.QTextEdit(self)
         self.web = QtWebKitWidgets.QWebView(self)
 
+        # This displays incorrectly
+        # self.webSettings = QtWebKit.QWebSettings.globalSettings()
+        # self.webSettings.setUserStyleSheetUrl(
+        #     QtCore.QUrl("file:///home/dc/bin/markdown-diary/github-markdown.css"))
+
         self.setCentralWidget(self.window)
 
         self.setWindowTitle("Markdown Diary")
@@ -40,7 +46,7 @@ class Main(QtWidgets.QMainWindow):
         self.stack.addWidget(self.web)
 
         self.tree = QtWidgets.QTreeWidget()
-        self.tree.setColumnCount(2);
+        self.tree.setColumnCount(2)
         self.tree.setHeaderLabels(["Date", "Title"])
         self.initTree()
 
@@ -69,7 +75,26 @@ class Main(QtWidgets.QMainWindow):
 
     def markdown(self):
 
-        self.web.setHtml(self.toMarkdown(self.text.toPlainText()))
+        css_include = """
+<link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-markdown.css">
+<style>
+    .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+"""
+        css_article_start = '<article class="markdown-body">\n'
+        css_article_end = '</article>\n'
+        html = css_include
+        html += css_article_start
+        html += self.toMarkdown(self.text.toPlainText())
+        html += css_article_end
+
+        self.web.setHtml(html)
 
         if self.stack.currentIndex() == 1:
             self.stack.setCurrentIndex(0)
