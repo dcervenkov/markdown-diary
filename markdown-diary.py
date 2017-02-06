@@ -14,6 +14,7 @@ from PyQt5 import QtWebKitWidgets
 from PyQt5 import QtWebKit
 
 import mistune
+from markdownhighlighter import MarkdownHighlighter
 
 
 class Main(QtWidgets.QMainWindow):
@@ -30,12 +31,17 @@ class Main(QtWidgets.QMainWindow):
         self.initToolbar()
 
         self.text = QtWidgets.QTextEdit(self)
+        self.text.setAcceptRichText(False)
+        self.text.setFont(QtGui.QFont("Ubuntu Mono"))
+
         self.web = QtWebKitWidgets.QWebView(self)
 
         # This displays incorrectly
         # self.webSettings = QtWebKit.QWebSettings.globalSettings()
         # self.webSettings.setUserStyleSheetUrl(
         #     QtCore.QUrl("file:///home/dc/bin/markdown-diary/github-markdown.css"))
+
+        self.highlighter = MarkdownHighlighter(self.text)
 
         self.setCentralWidget(self.window)
 
