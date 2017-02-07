@@ -5,6 +5,7 @@ TODO: Write description
 """
 
 
+import os
 import sys
 import tempfile
 
@@ -46,6 +47,8 @@ class Main(QtWidgets.QMainWindow):
         self.toMarkdown = mistune.Markdown(renderer=renderer)
         self.initUI()
 
+        self.diary = "/home/dc/bin/markdown-diary/temp/diary.md"
+
     def initUI(self):
 
         self.window = QtWidgets.QWidget(self)
@@ -85,13 +88,35 @@ class Main(QtWidgets.QMainWindow):
 
     def initToolbar(self):
 
-        self.markdownAction = QtWidgets.QAction(QtGui.QIcon.fromTheme("down"), "New", self)
+        self.markdownAction = QtWidgets.QAction(
+                QtGui.QIcon.fromTheme("down"), "Markdown", self)
         self.markdownAction.setShortcut("Ctrl+M")
-        self.markdownAction.setStatusTip("Toggle markdown rendering.")
+        self.markdownAction.setStatusTip("Toggle markdown rendering")
         self.markdownAction.triggered.connect(self.markdown)
+
+        self.newNoteAction = QtWidgets.QAction(
+                QtGui.QIcon.fromTheme("add"), "New note", self)
+        self.newNoteAction.setShortcut("Ctrl+N")
+        self.newNoteAction.setStatusTip("Create a new note")
+        self.newNoteAction.triggered.connect(self.newNote)
+
+        self.saveNoteAction = QtWidgets.QAction(
+                QtGui.QIcon.fromTheme("document-save"), "Save", self)
+        self.saveNoteAction.setShortcut("Ctrl+S")
+        self.saveNoteAction.setStatusTip("Save note")
+        self.saveNoteAction.triggered.connect(self.saveNote)
+
+        self.openDiaryAction = QtWidgets.QAction(
+                QtGui.QIcon.fromTheme("document-open"), "Open diary", self)
+        self.openDiaryAction.setShortcut("Ctrl+O")
+        self.openDiaryAction.setStatusTip("Open diary")
+        self.openDiaryAction.triggered.connect(self.openDiary)
 
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.addAction(self.markdownAction)
+        self.toolbar.addAction(self.newNoteAction)
+        self.toolbar.addAction(self.saveNoteAction)
+        self.toolbar.addAction(self.openDiaryAction)
 
     def initTree(self):
 
@@ -140,6 +165,28 @@ class Main(QtWidgets.QMainWindow):
                 "file://" + tmpf.name))
 
         # TODO: Delete tmp files
+
+    def newNote(self):
+
+        print("New note")
+
+    def saveNote(self):
+
+        with open(self.diary) as df, tempfile.NamedTemporaryFile(
+                mode="w", prefix=".diary_", suffix=".tmp",
+                dir=os.path.dirname(self.diary), delete=False) as tmpf:
+            tmpf.write(self.text.toPlainText())
+        os.replace(tmpf.name, self.diary)
+
+    def openDiary(self):
+
+        with open(self.diary) as f:
+            self.diaryData = f.read()
+        self.text.setText(self.getNote())
+
+    def getNote(self):
+
+        return self.diaryData
 
 
 def main():
