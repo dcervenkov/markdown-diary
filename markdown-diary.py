@@ -8,6 +8,9 @@ TODO: Write description
 import os
 import sys
 import tempfile
+import uuid
+import re
+import datetime
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
@@ -47,7 +50,9 @@ class Main(QtWidgets.QMainWindow):
         self.toMarkdown = mistune.Markdown(renderer=renderer)
         self.initUI()
 
-        self.diary = "/home/dc/bin/markdown-diary/temp/diary.md"
+        self.loadSettings()
+
+        self.openDiary(self.recent_diaries[0])
 
     def initUI(self):
 
@@ -92,7 +97,7 @@ class Main(QtWidgets.QMainWindow):
                 QtGui.QIcon.fromTheme("down"), "Markdown", self)
         self.markdownAction.setShortcut("Ctrl+M")
         self.markdownAction.setStatusTip("Toggle markdown rendering")
-        self.markdownAction.triggered.connect(self.markdown)
+        self.markdownAction.triggered.connect(self.markdownToggle)
 
         self.newNoteAction = QtWidgets.QAction(
                 QtGui.QIcon.fromTheme("add"), "New note", self)
@@ -125,10 +130,22 @@ class Main(QtWidgets.QMainWindow):
             entries.append(QtWidgets.QTreeWidgetItem(["2017-01-01", "Entry " + str(i)]))
         self.tree.addTopLevelItems(entries)
 
+    def loadSettings(self):
+
+        self.recent_diaries = ["/home/dc/bin/markdown-diary/temp/diary.md"]
+
+    def markdownToggle(self):
+
+        if self.stack.currentIndex() == 1:
+            self.stack.setCurrentIndex(0)
+        else:
+            self.stack.setCurrentIndex(1)
+            self.markdown()
+
     def markdown(self):
 
-        # TODO: Refactor css_include
-        css_include = """
+            # TODO: Refactor css_include
+            css_include = """
 <link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-markdown.css">
 <link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-pygments.css">
 <style>
@@ -141,17 +158,12 @@ class Main(QtWidgets.QMainWindow):
     }
 </style>
 """
-        css_article_start = '<article class="markdown-body">\n'
-        css_article_end = '</article>\n'
-        html = css_include
-        html += css_article_start
-        html += self.toMarkdown(self.text.toPlainText())
-        html += css_article_end
-
-        if self.stack.currentIndex() == 1:
-            self.stack.setCurrentIndex(0)
-        else:
-            self.stack.setCurrentIndex(1)
+            css_article_start = '<article class="markdown-body">\n'
+            css_article_end = '</article>\n'
+            html = css_include
+            html += css_article_start
+            html += self.toMarkdown(self.text.toPlainText())
+            html += css_article_end
 
             # Without a real file, intra-note tag links (#header1) won't work
             with tempfile.NamedTemporaryFile(
@@ -168,7 +180,10 @@ class Main(QtWidgets.QMainWindow):
 
     def newNote(self):
 
-        print("New note")
+        self.note_date = print(datetime.date.today().isoformat())
+        self.note_id = uuid.uuid1()
+
+        self.text.clear()
 
     def saveNote(self):
 
@@ -178,13 +193,55 @@ class Main(QtWidgets.QMainWindow):
             tmpf.write(self.text.toPlainText())
         os.replace(tmpf.name, self.diary)
 
-    def openDiary(self):
+    def openDiary(self, diary):
 
-        with open(self.diary) as f:
+        with open(diary) as f:
             self.diaryData = f.read()
-        self.text.setText(self.getNote())
 
-    def getNote(self):
+        self.note_ids = self.getNoteIds(self.diaryData)
+
+        self.text.setText(self.getNote(self.note_ids[-1]))
+        self.stack.setCurrentIndex(1)
+        self.markdown()
+
+    def getNoteIds(self, diaryData):
+
+        reHeader = re.compile(
+            r"""^<!---      # Beggining of Markdown comment
+                (?:\n|\r\n) # Unix|Windows newline non-capturing
+                note_id\ =\ #
+                (.*)        # Capture the note id
+                (?:\n|\r\n) # Unix|Windows newline non-capturing
+                """, re.MULTILINE | re.VERBOSE)
+        return reHeader.findall(diaryData)
+
+    def getNote(self, note_id):
+
+        # reHeader = re.compile(r'^<!---(?:\n|\r\n)note_id = ' + note_id +
+        #         r'.*?--->(?:\n|\r\n)*[0-9]{4}-[0-9]{2}-[0-9]{2}(?:\n|\r\n)*',
+        #         re.MULTILINE|re.DOTALL)
+
+        reHeader = re.compile(
+            r"""^<!---              # Beggining of Markdown comment
+                (?:\n|\r\n)         # Unix|Windows newline non-capturing
+                note_id\ =\ """ + note_id +
+            r""".*?                 # Any number of lines of anything
+                --->                # End of Markdown comment
+                (?:\n|\r\n)*        # Unix|Windows newline(s) non-capturing
+                [0-9]{4}-[0-9]{2}-[0-9]{2} # Date in a YYYY-MM-DD format
+                (?:\n|\r\n)*        # Unix|Windows newline(s) non-capturing
+                """, re.MULTILINE | re.DOTALL | re.VERBOSE)
+
+        reHeaderNext = re.compile(
+                r'^<!---(?:\n|\r\n)note_id = (.*)(?:\n|\r\n)', re.MULTILINE)
+
+        header = reHeader.search(self.diaryData)
+        nextHeader = reHeaderNext.search(self.diaryData, header.end())
+
+        if nextHeader is None:
+            return self.diaryData[header.end():]
+        else:
+            return self.diaryData[header.end(): nextHeader.start()]
 
         return self.diaryData
 
