@@ -6,12 +6,11 @@ TODO: Write description
 
 
 import sys
+import tempfile
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
-from PyQt5 import QtWebKit
 
 from markdownhighlighter import MarkdownHighlighter
 
@@ -19,6 +18,7 @@ import mistune
 import pygments
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import html
+
 
 class HighlightRenderer(mistune.Renderer):
     def block_code(self, code, lang):
@@ -102,6 +102,7 @@ class Main(QtWidgets.QMainWindow):
 
     def markdown(self):
 
+        # TODO: Refactor css_include
         css_include = """
 <link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-markdown.css">
 <link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-pygments.css">
@@ -122,12 +123,23 @@ class Main(QtWidgets.QMainWindow):
         html += self.toMarkdown(self.text.toPlainText())
         html += css_article_end
 
-        self.web.setHtml(html)
-
         if self.stack.currentIndex() == 1:
             self.stack.setCurrentIndex(0)
         else:
             self.stack.setCurrentIndex(1)
+
+            # Without a real file, intra-note tag links (#header1) won't work
+            with tempfile.NamedTemporaryFile(
+                    mode="w", prefix=".markdown-diary_", suffix=".tmp",
+                    dir=tempfile.gettempdir(), delete=False) as tmpf:
+                tmpf.write(html)
+
+            # QWebView resolves relative links (like # tags) with respect to
+            # the baseUrl
+            self.web.setHtml(html, baseUrl=QtCore.QUrl(
+                "file://" + tmpf.name))
+
+        # TODO: Delete tmp files
 
 
 def main():
