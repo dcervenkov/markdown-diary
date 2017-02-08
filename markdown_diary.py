@@ -85,8 +85,12 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.stack.addWidget(self.web)
 
         self.tree = QtWidgets.QTreeWidget()
-        self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels(["Date", "Title"])
+        self.tree.setColumnCount(3)
+        self.tree.setHeaderLabels(["Id", "Date", "Title"])
+        self.tree.setColumnHidden(0, True)
+        self.tree.setSortingEnabled(True)
+        self.tree.sortByColumn(1, QtCore.Qt.DescendingOrder)
+        self.tree.itemSelectionChanged.connect(self.itemSelectionChanged)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.stack)
@@ -132,7 +136,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         for note in metadata:
             entries.append(QtWidgets.QTreeWidgetItem(
-                [note["date"], note["title"]]))
+                [note["note_id"], note["date"], note["title"]]))
 
         self.tree.addTopLevelItems(entries)
 
@@ -207,10 +211,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.noteMetadata = self.getNotesMetadata(self.diaryData)
         self.loadTree(self.noteMetadata)
 
-        self.text.setText(self.getNote(self.diaryData,
-                          self.noteMetadata[-1]["note_id"]))
+        self.displayNote(self.noteMetadata[-1]["note_id"])
         self.stack.setCurrentIndex(1)
-        self.markdown()
 
     def getNotesMetadata(self, diaryData):
 
@@ -270,6 +272,18 @@ class DiaryApp(QtWidgets.QMainWindow):
         else:
             return diaryData[header.end(): nextHeader.start()]
 
+    def itemSelectionChanged(self):
+
+        if len(self.tree.selectedItems()) != 1:
+            return
+
+        item = self.tree.selectedItems()[0]
+        self.displayNote(item.text(0))
+
+    def displayNote(self, noteId):
+
+        self.text.setText(self.getNote(self.diaryData, noteId))
+        self.markdown()
 
 def main():
 
