@@ -39,7 +39,7 @@ class HighlightRenderer(mistune.Renderer):
         return pygments.highlight(code, lexer, formatter)
 
 
-class Main(QtWidgets.QMainWindow):
+class DiaryApp(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
 
@@ -200,7 +200,7 @@ class Main(QtWidgets.QMainWindow):
 
         self.note_ids = self.getNoteIds(self.diaryData)
 
-        self.text.setText(self.getNote(self.note_ids[-1]))
+        self.text.setText(self.getNote(self.diaryData, self.note_ids[-1]))
         self.stack.setCurrentIndex(1)
         self.markdown()
 
@@ -215,16 +215,12 @@ class Main(QtWidgets.QMainWindow):
                 """, re.MULTILINE | re.VERBOSE)
         return reHeader.findall(diaryData)
 
-    def getNote(self, note_id):
-
-        # reHeader = re.compile(r'^<!---(?:\n|\r\n)note_id = ' + note_id +
-        #         r'.*?--->(?:\n|\r\n)*[0-9]{4}-[0-9]{2}-[0-9]{2}(?:\n|\r\n)*',
-        #         re.MULTILINE|re.DOTALL)
+    def getNote(self, diaryData, noteId):
 
         reHeader = re.compile(
             r"""^<!---              # Beggining of Markdown comment
                 (?:\n|\r\n)         # Unix|Windows newline non-capturing
-                note_id\ =\ """ + note_id +
+                note_id\ =\ """ + noteId +
             r""".*?                 # Any number of lines of anything
                 --->                # End of Markdown comment
                 (?:\n|\r\n)*        # Unix|Windows newline(s) non-capturing
@@ -235,22 +231,20 @@ class Main(QtWidgets.QMainWindow):
         reHeaderNext = re.compile(
                 r'^<!---(?:\n|\r\n)note_id = (.*)(?:\n|\r\n)', re.MULTILINE)
 
-        header = reHeader.search(self.diaryData)
-        nextHeader = reHeaderNext.search(self.diaryData, header.end())
+        header = reHeader.search(diaryData)
+        nextHeader = reHeaderNext.search(diaryData, header.end())
 
         if nextHeader is None:
-            return self.diaryData[header.end():]
+            return diaryData[header.end():]
         else:
-            return self.diaryData[header.end(): nextHeader.start()]
-
-        return self.diaryData
+            return diaryData[header.end(): nextHeader.start()]
 
 
 def main():
 
     app = QtWidgets.QApplication(sys.argv)
 
-    main = Main()
+    main = DiaryApp()
     main.show()
 
     sys.exit(app.exec_())
