@@ -14,19 +14,28 @@ class MarkdownDiaryTest(unittest.TestCase):
 
         pass
 
-    def testGetNoteIds(self):
+    def testGetNotesMetadata(self):
 
         diary = markdown_diary.DiaryApp()
         with open('tests/diary.md') as f:
             diaryData = f.read()
 
-        ids = diary.getNoteIds(diaryData)
+        metadata = diary.getNotesMetadata(diaryData)
 
-        refIds = ['a3ea0c44-ed00-11e6-a9cf-c48508000000',
-                  'a3ea0c44-ed00-11e6-a9cf-c4850828558c',
-                  'a3ea0c44-ed00-11e6-a9cf-c48508000001']
+        refMetadata = [{'version': '3',
+                        'title': 'Short note',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
+                        'date': '2015-05-05'}, 
+                       {'version': '3',
+                        'title': 'Updated Markdown Test',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c4850828558c',
+                        'date': '2015-05-06'}, 
+                       {'version': '3',
+                        'title': 'Short note 2',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000001',
+                        'date': '2015-05-09'}]
 
-        self.assertListEqual(ids, refIds)
+        self.assertListEqual(metadata, refMetadata)
 
     def testGetNote(self):
 

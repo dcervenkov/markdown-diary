@@ -54,6 +54,10 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.openDiary(self.recent_diaries[0])
 
+    def __del__(self):
+
+        pass
+
     def initUI(self):
 
         self.window = QtWidgets.QWidget(self)
@@ -83,7 +87,6 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.tree = QtWidgets.QTreeWidget()
         self.tree.setColumnCount(2)
         self.tree.setHeaderLabels(["Date", "Title"])
-        self.initTree()
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.stack)
@@ -123,11 +126,14 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toolbar.addAction(self.saveNoteAction)
         self.toolbar.addAction(self.openDiaryAction)
 
-    def initTree(self):
+    def loadTree(self, metadata):
 
         entries = []
-        for i in range(1, 11):
-            entries.append(QtWidgets.QTreeWidgetItem(["2017-01-01", "Entry " + str(i)]))
+
+        for note in metadata:
+            entries.append(QtWidgets.QTreeWidgetItem(
+                [note["date"], note["title"]]))
+
         self.tree.addTopLevelItems(entries)
 
     def loadSettings(self):
@@ -144,20 +150,20 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def markdown(self):
 
-            # TODO: Refactor css_include
-            css_include = """
-<link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-markdown.css">
-<link rel="stylesheet" href="file:///home/dc/bin/markdown-diary/github-pygments.css">
-<style>
-    .markdown-body {
-        box-sizing: border-box;
-        min-width: 200px;
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 45px;
-    }
-</style>
-"""
+            css_include = ('<link rel="stylesheet" href="file:///'
+                           'home/dc/bin/markdown-diary/github-markdown.css">\n'
+                           '<link rel="stylesheet" href="file:///'
+                           'home/dc/bin/markdown-diary/github-pygments.css">\n'
+                           '<style>\n'
+                           '    .markdown-body {\n'
+                           '        box-sizing: border-box;\n'
+                           '        min-width: 200px;\n'
+                           '        max-width: 980px;\n'
+                           '        margin: 0 auto;\n'
+                           '        padding: 45px;\n'
+                           '    }\n'
+                           '</style>\n')
+
             css_article_start = '<article class="markdown-body">\n'
             css_article_end = '</article>\n'
             html = css_include
@@ -181,7 +187,7 @@ class DiaryApp(QtWidgets.QMainWindow):
     def newNote(self):
 
         self.note_date = print(datetime.date.today().isoformat())
-        self.note_id = uuid.uuid1()
+        self.noteId = uuid.uuid1()
 
         self.text.clear()
 
@@ -198,38 +204,63 @@ class DiaryApp(QtWidgets.QMainWindow):
         with open(diary) as f:
             self.diaryData = f.read()
 
-        self.note_ids = self.getNoteIds(self.diaryData)
+        self.noteMetadata = self.getNotesMetadata(self.diaryData)
+        self.loadTree(self.noteMetadata)
 
-        self.text.setText(self.getNote(self.diaryData, self.note_ids[-1]))
+        self.text.setText(self.getNote(self.diaryData,
+                          self.noteMetadata[-1]["note_id"]))
         self.stack.setCurrentIndex(1)
         self.markdown()
 
-    def getNoteIds(self, diaryData):
+    def getNotesMetadata(self, diaryData):
 
         reHeader = re.compile(
-            r"""^<!---      # Beggining of Markdown comment
-                (?:\n|\r\n) # Unix|Windows newline non-capturing
-                note_id\ =\ #
-                (.*)        # Capture the note id
-                (?:\n|\r\n) # Unix|Windows newline non-capturing
-                """, re.MULTILINE | re.VERBOSE)
-        return reHeader.findall(diaryData)
+            r"""^<!---                         # Beggining of Markdown comment
+                (?:\n|\r\n)                    # Unix|Windows non-capturing \n
+                markdown-diary\ note\ metadata # Mandatory first line
+                (.*?)                          # Any characters including \n
+                --->                           # End of Markdown comment
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+        matches = reHeader.finditer(diaryData)
+
+        metadata = []
+        for match in matches:
+            metaDict = {}
+            for line in diaryData[
+                    match.start():match.end()].splitlines()[2:-1]:
+                key, val = line.partition("=")[::2]
+                metaDict[key.strip()] = val.strip()
+
+            date = diaryData[match.end():].splitlines()[1]
+            title = diaryData[match.end():].splitlines()[3].strip("# ")
+
+            metaDict["date"] = date
+            metaDict["title"] = title
+
+            metadata.append(metaDict)
+
+        return metadata
 
     def getNote(self, diaryData, noteId):
 
         reHeader = re.compile(
-            r"""^<!---              # Beggining of Markdown comment
-                (?:\n|\r\n)         # Unix|Windows newline non-capturing
-                note_id\ =\ """ + noteId +
-            r""".*?                 # Any number of lines of anything
-                --->                # End of Markdown comment
-                (?:\n|\r\n)*        # Unix|Windows newline(s) non-capturing
-                [0-9]{4}-[0-9]{2}-[0-9]{2} # Date in a YYYY-MM-DD format
-                (?:\n|\r\n)*        # Unix|Windows newline(s) non-capturing
-                """, re.MULTILINE | re.DOTALL | re.VERBOSE)
+            r"""^<!---
+                (?:\n|\r\n)
+                markdown-diary\ note\ metadata
+                (.*?)
+                note_id\ =\                     # Hashtag for PEP8 compiance
+                """ + noteId +
+            r"""(.*?)
+                --->
+                (?:\n|\r\n)*
+                [0-9]{4}-[0-9]{2}-[0-9]{2}      # Date in a YYYY-MM-DD format
+                (?:\n|\r\n)*
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
 
         reHeaderNext = re.compile(
-                r'^<!---(?:\n|\r\n)note_id = (.*)(?:\n|\r\n)', re.MULTILINE)
+                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+                re.MULTILINE)
 
         header = reHeader.search(diaryData)
         nextHeader = reHeaderNext.search(diaryData, header.end())

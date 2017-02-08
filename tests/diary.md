@@ -1,4 +1,5 @@
 <!---
+markdown-diary note metadata
 note_id = a3ea0c44-ed00-11e6-a9cf-c48508000000
 version = 3
 --->
@@ -9,6 +10,7 @@ version = 3
 Test
 
 <!---
+markdown-diary note metadata
 note_id = a3ea0c44-ed00-11e6-a9cf-c4850828558c
 version = 3
 --->
@@ -418,10 +420,11 @@ Referencing a bug by #bugID in your git commit links it to the slip. For example
 License: [CC-BY](https://creativecommons.org/licenses/by/3.0/)
 
 <!---
+markdown-diary note metadata
 note_id = a3ea0c44-ed00-11e6-a9cf-c48508000001
 version = 3
 --->
-2015-05-05
+2015-05-09
 
 # Short note 2
 
