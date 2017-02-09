@@ -64,7 +64,7 @@ class Diary():
         else:
             newData = self.data
             noteDate = datetime.date.today().isoformat()
-            noteId = str(uuid.uuid1())
+            noteId = noteId
             newData += self.createNoteHeader(noteId, noteDate)
             newData += note
             self.saveDiary(newData)
@@ -391,6 +391,13 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary.saveNote(
                 self.text.toPlainText(), self.noteId, self.noteDate)
         self.loadTree(self.diary.metadata)
+        
+        # TODO This block is here to disallow reloading of self.text
+        # which moves the cursor up. Make it more elegant than this!
+        self.tree.blockSignals(True)
+        self.tree.setCurrentItem(
+                self.tree.findItems(self.noteId, QtCore.Qt.MatchExactly)[0])
+        self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
 
