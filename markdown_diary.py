@@ -81,9 +81,36 @@ class Diary():
 
         return header
 
-    def updateNote(self, note, noteId):
+    def updateNote(self, note, noteId, noteDate):
 
-        pass
+        reHeader = re.compile(
+            r"""^<!---
+                (?:\n|\r\n)
+                markdown-diary\ note\ metadata
+                (.*?)
+                note_id\ =\                     # Hashtag for PEP8 compiance
+                """ + noteId +
+            r"""(.*?)
+                --->
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+        reHeaderNext = re.compile(
+                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+                re.MULTILINE)
+
+        header = reHeader.search(self.data)
+        nextHeader = reHeaderNext.search(self.data, header.end())
+
+        newData = self.data[:header.end()]
+        newData += "\n"
+        newData += noteDate
+        newData += "\n\n"
+        newData += note
+        if nextHeader is not None:
+            newData += "\n"
+            newData += self.data[nextHeader.start():]
+
+        self.saveDiary(newData)
 
     def getMetadata(self, diaryData):
 
