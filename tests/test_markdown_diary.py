@@ -1,3 +1,5 @@
+# To be run using `python3 -m unittest discover` from the root dir (`../`)
+
 import sys
 import unittest
 
@@ -7,29 +9,53 @@ import markdown_diary
 
 app = QtWidgets.QApplication(sys.argv)
 
+diaryFileName = 'tests/diary.md'
+noteFileName = 'tests/note.md'
+htmlNoteFileName = 'tests/note.html'
 
-class MarkdownDiaryTest(unittest.TestCase):
 
-    def setUp(self):
+class DiaryTest(unittest.TestCase):
+
+    def test__init__(self):
+
+        markdown_diary.Diary(diaryFileName)
+
+    def testSaveDiary(self):
 
         pass
 
-    def testGetNotesMetadata(self):
+    def testSaveNote(self):
 
-        diary = markdown_diary.DiaryApp()
-        with open('tests/diary.md') as f:
+        pass
+
+    def testCreateNoteHeader(self):
+
+        pass
+
+    def testUpdateNote(self):
+
+        pass
+
+    def testDeleteNote(self):
+
+        pass
+
+    def testGetMetadata(self):
+
+        diary = markdown_diary.Diary(diaryFileName)
+        with open(diaryFileName) as f:
             diaryData = f.read()
 
-        metadata = diary.getNotesMetadata(diaryData)
+        metadata = diary.getMetadata(diaryData)
 
         refMetadata = [{'version': '3',
                         'title': 'Short note',
                         'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
-                        'date': '2015-05-05'}, 
+                        'date': '2015-05-05'},
                        {'version': '3',
                         'title': 'Updated Markdown Test',
                         'note_id': 'a3ea0c44-ed00-11e6-a9cf-c4850828558c',
-                        'date': '2015-05-06'}, 
+                        'date': '2015-05-06'},
                        {'version': '3',
                         'title': 'Short note 2',
                         'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000001',
@@ -39,8 +65,8 @@ class MarkdownDiaryTest(unittest.TestCase):
 
     def testGetNote(self):
 
-        diary = markdown_diary.DiaryApp()
-        with open('tests/diary.md') as f:
+        diary = markdown_diary.Diary(diaryFileName)
+        with open(diaryFileName) as f:
             diaryData = f.read()
 
         note = diary.getNote(diaryData, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
@@ -52,19 +78,18 @@ class MarkdownDiaryTest(unittest.TestCase):
 
         self.assertEqual(note, refNote)
 
-    def testOpenDiary(self):
+    def testGetNoteMetadata(self):
 
         pass
 
-    def testNewNote(self):
+
+class DiaryAppTest(unittest.TestCase):
+
+    def testLoadTree(self):
 
         pass
 
-    def testSaveNote(self):
-
-        pass
-
-    def testInitTree(self):
+    def testLoadSettings(self):
 
         pass
 
@@ -72,10 +97,10 @@ class MarkdownDiaryTest(unittest.TestCase):
 
         self.maxDiff = None
         diary = markdown_diary.DiaryApp()
-        with open('tests/note.md') as f:
+        with open(noteFileName) as f:
             note = f.read()
 
-        with open('tests/note.html') as f:
+        with open(htmlNoteFileName) as f:
             refNoteHtml = f.read()
 
         diary.text.setText(note)
@@ -83,6 +108,10 @@ class MarkdownDiaryTest(unittest.TestCase):
         noteHtml = diary.web.page().mainFrame().toHtml()
 
         self.assertEqual(noteHtml, refNoteHtml)
+
+    def testOpenDiary(self):
+
+        pass
 
 
 if __name__ == '__main__':

@@ -43,7 +43,7 @@ class Diary():
 
         if checksum == self.checksum:
             newChecksum = binascii.crc32(bytes(newData, encoding="UTF-8"))
-            
+
             with tempfile.NamedTemporaryFile(
                     mode="w", prefix=".diary_", suffix=".tmp",
                     dir=os.path.dirname(self.fname), delete=False) as tmpf:
@@ -388,7 +388,8 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def saveNote(self):
 
-        self.diary.saveNote(self.text.toPlainText(), self.noteId, self.noteDate)
+        self.diary.saveNote(
+                self.text.toPlainText(), self.noteId, self.noteDate)
         self.loadTree(self.diary.metadata)
 
     def deleteNote(self, noteId=None):
@@ -398,7 +399,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         nextNoteId = self.tree.itemBelow(self.tree.currentItem()).text(0)
         self.diary.deleteNote(noteId)
         self.loadTree(self.diary.metadata)
-        self.tree.setCurrentItem(self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
+        self.tree.setCurrentItem(
+                self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
 
     def openDiary(self):
 
@@ -423,7 +425,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.loadTree(self.diary.metadata)
 
         lastNoteId = self.diary.metadata[-1]["note_id"]
-        self.tree.setCurrentItem(self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
+        self.tree.setCurrentItem(
+                self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
 
     def itemSelectionChanged(self):
