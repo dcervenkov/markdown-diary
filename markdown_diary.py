@@ -52,7 +52,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.loadSettings()
 
-        self.openDiary(self.recent_diaries[0])
+        self.loadDiary(self.recent_diaries[0])
 
     def __del__(self):
 
@@ -138,6 +138,7 @@ class DiaryApp(QtWidgets.QMainWindow):
             entries.append(QtWidgets.QTreeWidgetItem(
                 [note["note_id"], note["date"], note["title"]]))
 
+        self.tree.clear()
         self.tree.addTopLevelItems(entries)
 
     def loadSettings(self):
@@ -203,9 +204,26 @@ class DiaryApp(QtWidgets.QMainWindow):
             tmpf.write(self.text.toPlainText())
         os.replace(tmpf.name, self.diary)
 
-    def openDiary(self, diary):
+    def openDiary(self):
 
-        with open(diary) as f:
+        fname = QtWidgets.QFileDialog.getOpenFileName(
+                caption="Open Diary",
+                filter="Markdown Files (*.md);;All Files (*)")[0]
+
+        if fname:
+            if self.isValidDiary(fname):
+                self.loadDiary(fname)
+            else:
+                print("ERROR:" + fname + "is not a valid diary file!")
+
+    def isValidDiary(self, fname):
+
+        # TODO Implement checks
+        return True
+
+    def loadDiary(self, fname):
+
+        with open(fname) as f:
             self.diaryData = f.read()
 
         self.noteMetadata = self.getNotesMetadata(self.diaryData)
@@ -284,6 +302,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.text.setText(self.getNote(self.diaryData, noteId))
         self.markdown()
+
 
 def main():
 
