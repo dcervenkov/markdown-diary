@@ -391,7 +391,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary.saveNote(
                 self.text.toPlainText(), self.noteId, self.noteDate)
         self.loadTree(self.diary.metadata)
-        
+
         # TODO This block is here to disallow reloading of self.text
         # which moves the cursor up. Make it more elegant than this!
         self.tree.blockSignals(True)
@@ -400,6 +400,14 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
+
+        deleteMsg = "Do you really want to delete the note?"
+        reply = QtWidgets.QMessageBox.question(
+                self, 'Message', deleteMsg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+
+        if reply == QtWidgets.QMessageBox.No:
+            return
 
         if noteId is None:
             noteId = self.noteId
@@ -437,6 +445,20 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.stack.setCurrentIndex(1)
 
     def itemSelectionChanged(self):
+
+        if self.text.document().isModified():
+            discardMsg = ("You have unsaved changes. "
+                          "Do you want to discard them?")
+            reply = QtWidgets.QMessageBox.question(
+                    self, 'Message', discardMsg,
+                    QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+
+            if reply == QtWidgets.QMessageBox.No:
+                self.tree.blockSignals(True)
+                self.tree.setCurrentItem(self.tree.findItems(
+                            self.noteId, QtCore.Qt.MatchExactly)[0])
+                self.tree.blockSignals(False)
+                return
 
         if len(self.tree.selectedItems()) != 1:
             return
