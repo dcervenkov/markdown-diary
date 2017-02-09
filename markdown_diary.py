@@ -11,6 +11,7 @@ import tempfile
 import uuid
 import re
 import datetime
+import binascii
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
@@ -22,6 +23,131 @@ import mistune
 import pygments
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import html
+
+
+class Diary():
+
+    def __init__(self, fname):
+
+        self.fname = fname
+        with open(fname) as f:
+            self.data = f.read()
+        self.checksum = binascii.crc32(bytes(self.data, encoding="UTF-8"))
+        self.metadata = self.getMetadata(self.data)
+
+    def saveDiary(self, newData):
+
+        with open(self.fname) as f:
+            data = f.read()
+        checksum = binascii.crc32(bytes(data, encoding="UTF-8"))
+
+        if checksum == self.checksum:
+            newChecksum = binascii.crc32(bytes(newData, encoding="UTF-8"))
+            
+            with tempfile.NamedTemporaryFile(
+                    mode="w", prefix=".diary_", suffix=".tmp",
+                    dir=os.path.dirname(self.fname), delete=False) as tmpf:
+                tmpf.write(newData)
+            os.replace(tmpf.name, self.fname)
+
+            self.data = newData
+            self.checksum = newChecksum
+            self.metadata = self.getMetadata(self.data)
+
+        else:
+            print("ERROR: Diary file was changed! Abort save.")
+
+    def saveNote(self, note, noteId, noteDate):
+
+        if any(noteId in metaDict["note_id"] for metaDict in self.metadata):
+            self.updateNote(note, noteId, noteDate)
+        else:
+            newData = self.data
+            noteDate = datetime.date.today().isoformat()
+            noteId = str(uuid.uuid1())
+            newData += self.createNoteHeader(noteId, noteDate)
+            newData += note
+            self.saveDiary(newData)
+
+    def createNoteHeader(self, noteId, noteDate):
+
+        header = ("\n<!---\n"
+                  "markdown-diary note metadata\n"
+                  "note_id = ")
+        header += noteId
+        header += "\n--->\n"
+        header += noteDate
+        header += "\n\n"
+
+        return header
+
+    def updateNote(self, note, noteId):
+
+        pass
+
+    def getMetadata(self, diaryData):
+
+        reHeader = re.compile(
+            r"""^<!---                         # Beggining of Markdown comment
+                (?:\n|\r\n)                    # Unix|Windows non-capturing \n
+                markdown-diary\ note\ metadata # Mandatory first line
+                (.*?)                          # Any characters including \n
+                --->                           # End of Markdown comment
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+        matches = reHeader.finditer(diaryData)
+
+        metadata = []
+        for match in matches:
+            metaDict = {}
+            for line in diaryData[
+                    match.start():match.end()].splitlines()[2:-1]:
+                key, val = line.partition("=")[::2]
+                metaDict[key.strip()] = val.strip()
+
+            date = diaryData[match.end():].splitlines()[1]
+            title = diaryData[match.end():].splitlines()[3].strip("# ")
+
+            metaDict["date"] = date
+            metaDict["title"] = title
+
+            metadata.append(metaDict)
+
+        return metadata
+
+    def getNote(self, diaryData, noteId):
+
+        reHeader = re.compile(
+            r"""^<!---
+                (?:\n|\r\n)
+                markdown-diary\ note\ metadata
+                (.*?)
+                note_id\ =\                     # Hashtag for PEP8 compiance
+                """ + noteId +
+            r"""(.*?)
+                --->
+                (?:\n|\r\n)*
+                [0-9]{4}-[0-9]{2}-[0-9]{2}      # Date in a YYYY-MM-DD format
+                (?:\n|\r\n)*
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+        reHeaderNext = re.compile(
+                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+                re.MULTILINE)
+
+        header = reHeader.search(diaryData)
+        nextHeader = reHeaderNext.search(diaryData, header.end())
+
+        if nextHeader is None:
+            return diaryData[header.end():]
+        else:
+            return diaryData[header.end(): nextHeader.start()]
+
+    def getNoteMetadata(self, metadata, noteId):
+
+        for metaDict in metadata:
+            if noteId == metaDict["note_id"]:
+                return metaDict
 
 
 class HighlightRenderer(mistune.Renderer):
@@ -191,18 +317,18 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def newNote(self):
 
-        self.note_date = print(datetime.date.today().isoformat())
-        self.noteId = uuid.uuid1()
+        self.noteDate = datetime.date.today().isoformat()
+        self.noteId = str(uuid.uuid1())
+
+        # TODO Add note to tree
 
         self.text.clear()
+        self.stack.setCurrentIndex(0)
 
     def saveNote(self):
 
-        with open(self.diary) as df, tempfile.NamedTemporaryFile(
-                mode="w", prefix=".diary_", suffix=".tmp",
-                dir=os.path.dirname(self.diary), delete=False) as tmpf:
-            tmpf.write(self.text.toPlainText())
-        os.replace(tmpf.name, self.diary)
+        self.diary.saveNote(self.text.toPlainText(), self.noteId, self.noteDate)
+        self.loadTree(self.diary.metadata)
 
     def openDiary(self):
 
@@ -223,72 +349,11 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def loadDiary(self, fname):
 
-        with open(fname) as f:
-            self.diaryData = f.read()
+        self.diary = Diary(fname)
+        self.loadTree(self.diary.metadata)
 
-        self.noteMetadata = self.getNotesMetadata(self.diaryData)
-        self.loadTree(self.noteMetadata)
-
-        self.displayNote(self.noteMetadata[-1]["note_id"])
+        self.displayNote(self.diary.metadata[-1]["note_id"])
         self.stack.setCurrentIndex(1)
-
-    def getNotesMetadata(self, diaryData):
-
-        reHeader = re.compile(
-            r"""^<!---                         # Beggining of Markdown comment
-                (?:\n|\r\n)                    # Unix|Windows non-capturing \n
-                markdown-diary\ note\ metadata # Mandatory first line
-                (.*?)                          # Any characters including \n
-                --->                           # End of Markdown comment
-                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
-
-        matches = reHeader.finditer(diaryData)
-
-        metadata = []
-        for match in matches:
-            metaDict = {}
-            for line in diaryData[
-                    match.start():match.end()].splitlines()[2:-1]:
-                key, val = line.partition("=")[::2]
-                metaDict[key.strip()] = val.strip()
-
-            date = diaryData[match.end():].splitlines()[1]
-            title = diaryData[match.end():].splitlines()[3].strip("# ")
-
-            metaDict["date"] = date
-            metaDict["title"] = title
-
-            metadata.append(metaDict)
-
-        return metadata
-
-    def getNote(self, diaryData, noteId):
-
-        reHeader = re.compile(
-            r"""^<!---
-                (?:\n|\r\n)
-                markdown-diary\ note\ metadata
-                (.*?)
-                note_id\ =\                     # Hashtag for PEP8 compiance
-                """ + noteId +
-            r"""(.*?)
-                --->
-                (?:\n|\r\n)*
-                [0-9]{4}-[0-9]{2}-[0-9]{2}      # Date in a YYYY-MM-DD format
-                (?:\n|\r\n)*
-                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
-
-        reHeaderNext = re.compile(
-                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
-                re.MULTILINE)
-
-        header = reHeader.search(diaryData)
-        nextHeader = reHeaderNext.search(diaryData, header.end())
-
-        if nextHeader is None:
-            return diaryData[header.end():]
-        else:
-            return diaryData[header.end(): nextHeader.start()]
 
     def itemSelectionChanged(self):
 
@@ -300,7 +365,10 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def displayNote(self, noteId):
 
-        self.text.setText(self.getNote(self.diaryData, noteId))
+        self.text.setText(self.diary.getNote(self.diary.data, noteId))
+        self.noteId = noteId
+        self.noteDate = self.diary.getNoteMetadata(
+                self.diary.metadata, noteId)["date"]
         self.markdown()
 
 
