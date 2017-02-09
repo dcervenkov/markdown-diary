@@ -87,7 +87,7 @@ class Diary():
             r"""^<!---
                 (?:\n|\r\n)
                 markdown-diary\ note\ metadata
-                (.*?)
+                (?:\n|\r\n)
                 note_id\ =\                     # Hashtag for PEP8 compiance
                 """ + noteId +
             r"""(.*?)
@@ -106,6 +106,33 @@ class Diary():
         newData += noteDate
         newData += "\n\n"
         newData += note
+        if nextHeader is not None:
+            newData += "\n"
+            newData += self.data[nextHeader.start():]
+
+        self.saveDiary(newData)
+
+    def deleteNote(self, noteId):
+
+        reHeader = re.compile(
+            r"""^<!---
+                (?:\n|\r\n)
+                markdown-diary\ note\ metadata
+                (?:\n|\r\n)
+                note_id\ =\                     # Hashtag for PEP8 compiance
+                """ + noteId +
+            r"""(.*?)
+                --->
+                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
+
+        reHeaderNext = re.compile(
+                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+                re.MULTILINE)
+
+        header = reHeader.search(self.data)
+        nextHeader = reHeaderNext.search(self.data, header.end())
+
+        newData = self.data[:header.start()]
         if nextHeader is not None:
             newData += "\n"
             newData += self.data[nextHeader.start():]
@@ -148,7 +175,7 @@ class Diary():
             r"""^<!---
                 (?:\n|\r\n)
                 markdown-diary\ note\ metadata
-                (.*?)
+                (?:\n|\r\n)
                 note_id\ =\                     # Hashtag for PEP8 compiance
                 """ + noteId +
             r"""(.*?)
@@ -277,10 +304,17 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.openDiaryAction.setStatusTip("Open diary")
         self.openDiaryAction.triggered.connect(self.openDiary)
 
+        self.deleteNoteAction = QtWidgets.QAction(
+                QtGui.QIcon.fromTheme("remove"), "Delete Note", self)
+        self.deleteNoteAction.setShortcut("Del")
+        self.deleteNoteAction.setStatusTip("Delete note")
+        self.deleteNoteAction.triggered.connect(lambda: self.deleteNote())
+
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.addAction(self.markdownAction)
         self.toolbar.addAction(self.newNoteAction)
         self.toolbar.addAction(self.saveNoteAction)
+        self.toolbar.addAction(self.deleteNoteAction)
         self.toolbar.addAction(self.openDiaryAction)
 
     def loadTree(self, metadata):
@@ -357,6 +391,15 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary.saveNote(self.text.toPlainText(), self.noteId, self.noteDate)
         self.loadTree(self.diary.metadata)
 
+    def deleteNote(self, noteId=None):
+
+        if noteId is None:
+            noteId = self.noteId
+        nextNoteId = self.tree.itemBelow(self.tree.currentItem()).text(0)
+        self.diary.deleteNote(noteId)
+        self.loadTree(self.diary.metadata)
+        self.tree.setCurrentItem(self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
+
     def openDiary(self):
 
         fname = QtWidgets.QFileDialog.getOpenFileName(
@@ -379,7 +422,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary = Diary(fname)
         self.loadTree(self.diary.metadata)
 
-        self.displayNote(self.diary.metadata[-1]["note_id"])
+        lastNoteId = self.diary.metadata[-1]["note_id"]
+        self.tree.setCurrentItem(self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
 
     def itemSelectionChanged(self):
