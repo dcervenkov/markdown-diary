@@ -241,6 +241,7 @@ class DiaryApp(QtWidgets.QMainWindow):
     def initUI(self):
 
         self.window = QtWidgets.QWidget(self)
+        self.splitter = QtWidgets.QSplitter()
         self.initToolbar()
 
         self.text = QtWidgets.QTextEdit(self)
@@ -271,10 +272,13 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.tree.setSortingEnabled(True)
         self.tree.sortByColumn(1, QtCore.Qt.DescendingOrder)
         self.tree.itemSelectionChanged.connect(self.itemSelectionChanged)
+        self.tree.itemDoubleClicked.connect(self.markdownToggle)
+
+        self.splitter.addWidget(self.stack)
+        self.splitter.addWidget(self.tree)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.stack)
-        layout.addWidget(self.tree)
+        layout.addWidget(self.splitter)
 
         self.window.setLayout(layout)
 
