@@ -390,6 +390,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.diary.saveNote(
                 self.text.toPlainText(), self.noteId, self.noteDate)
+        self.text.document().setModified(False)
         self.loadTree(self.diary.metadata)
 
         # TODO This block is here to disallow reloading of self.text
