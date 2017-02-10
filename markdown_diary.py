@@ -230,6 +230,9 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toMarkdown = mistune.Markdown(renderer=renderer)
         self.initUI()
 
+        self.settings = QtCore.QSettings(
+                "markdown-diary", application="settings")
+
         self.loadSettings()
 
         self.loadDiary(self.recent_diaries[0])
@@ -237,6 +240,21 @@ class DiaryApp(QtWidgets.QMainWindow):
     def __del__(self):
 
         pass
+
+    def closeEvent(self, event):
+
+        if self.text.document().isModified():
+            discardMsg = ("You have unsaved changes. "
+                          "Do you want to discard them?")
+            reply = QtWidgets.QMessageBox.question(
+                    self, 'Message', discardMsg,
+                    QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+
+            if reply == QtWidgets.QMessageBox.No:
+                event.ignore()
+                return
+
+        self.writeSettings()
 
     def initUI(self):
 
@@ -335,6 +353,21 @@ class DiaryApp(QtWidgets.QMainWindow):
     def loadSettings(self):
 
         self.recent_diaries = ["/home/dc/bin/markdown-diary/temp/diary.md"]
+
+        self.resize(self.settings.value(
+            "window/size", QtCore.QSize(600,400)))
+
+        self.move(self.settings.value(
+            "window/position", QtCore.QPoint(200,200)))
+        
+        self.splitter.setSizes(list(map(int, self.settings.value(
+            "window/splitter", [70,30]))))
+
+    def writeSettings(self):
+
+        self.settings.setValue("window/size", self.size())
+        self.settings.setValue("window/position", self.pos())
+        self.settings.setValue("window/splitter", self.splitter.sizes())
 
     def markdownToggle(self):
 
