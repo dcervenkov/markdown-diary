@@ -333,6 +333,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.deleteNoteAction.triggered.connect(lambda: self.deleteNote())
 
         self.toolbar = self.addToolBar("Main toolbar")
+        self.toolbar.setFloatable(False)
         self.toolbar.addAction(self.markdownAction)
         self.toolbar.addAction(self.newNoteAction)
         self.toolbar.addAction(self.saveNoteAction)
@@ -355,19 +356,25 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.recent_diaries = ["/home/dc/bin/markdown-diary/temp/diary.md"]
 
         self.resize(self.settings.value(
-            "window/size", QtCore.QSize(600,400)))
+            "window/size", QtCore.QSize(600, 400)))
 
         self.move(self.settings.value(
-            "window/position", QtCore.QPoint(200,200)))
-        
+            "window/position", QtCore.QPoint(200, 200)))
+
         self.splitter.setSizes(list(map(int, self.settings.value(
-            "window/splitter", [70,30]))))
+            "window/splitter", [70, 30]))))
+
+        toolBarArea = int(self.settings.value("window/toolbar_area",
+                                              QtCore.Qt.TopToolBarArea))
+        self.addToolBar(QtCore.Qt.ToolBarArea(toolBarArea), self.toolbar)
 
     def writeSettings(self):
 
         self.settings.setValue("window/size", self.size())
         self.settings.setValue("window/position", self.pos())
         self.settings.setValue("window/splitter", self.splitter.sizes())
+        self.settings.setValue("window/toolbar_area", self.toolBarArea(
+            self.toolbar))
 
     def markdownToggle(self):
 
