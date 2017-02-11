@@ -18,11 +18,8 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
 
 from markdownhighlighter import MarkdownHighlighter
-
-import mistune
-import pygments
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import html
+import markdown_math
+import style
 
 
 class Diary():
@@ -204,35 +201,19 @@ class Diary():
                 return metaDict
 
 
-class HighlightRenderer(mistune.Renderer):
-    def block_code(self, code, lang):
-        if not lang:
-            return '\n<pre><code>%s</code></pre>\n' % \
-                mistune.escape(code)
-        try:
-            lexer = get_lexer_by_name(lang, stripall=True)
-        except pygments.util.ClassNotFound:
-            return '\n<pre><code>%s</code></pre>\n' % \
-                mistune.escape(code)
-
-        formatter = html.HtmlFormatter()
-        return pygments.highlight(code, lexer, formatter)
-
-
 class DiaryApp(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        renderer = HighlightRenderer()
+        renderer = markdown_math.HighlightRenderer()
+        self.toMarkdown = markdown_math.MarkdownWithMath(renderer=renderer)
 
-        self.toMarkdown = mistune.Markdown(renderer=renderer)
         self.initUI()
 
         self.settings = QtCore.QSettings(
                 "markdown-diary", application="settings")
-
         self.loadSettings()
 
         self.loadDiary(self.recent_diaries[0])
@@ -366,7 +347,13 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         toolBarArea = int(self.settings.value("window/toolbar_area",
                                               QtCore.Qt.TopToolBarArea))
+        # addToolBar() actually just moves the specified toolbar if it
+        # was already added, which is what we want
         self.addToolBar(QtCore.Qt.ToolBarArea(toolBarArea), self.toolbar)
+
+        self.mathjax = self.settings.value(
+                "mathjax/location",
+                "https://cdn.mathjax.org/mathjax/latest/MathJax.js")
 
     def writeSettings(self):
 
@@ -386,26 +373,29 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def markdown(self):
 
-            css_include = ('<link rel="stylesheet" href="file:///'
-                           'home/dc/bin/markdown-diary/github-markdown.css">\n'
-                           '<link rel="stylesheet" href="file:///'
-                           'home/dc/bin/markdown-diary/github-pygments.css">\n'
-                           '<style>\n'
-                           '    .markdown-body {\n'
-                           '        box-sizing: border-box;\n'
-                           '        min-width: 200px;\n'
-                           '        max-width: 980px;\n'
-                           '        margin: 0 auto;\n'
-                           '        padding: 45px;\n'
-                           '    }\n'
-                           '</style>\n')
+            html = style.css
 
-            css_article_start = '<article class="markdown-body">\n'
-            css_article_end = '</article>\n'
-            html = css_include
-            html += css_article_start
+            # We load MathJax only when there is a good chance there is
+            # math in the note. We first perform inline math search as
+            # as that should be faster then the re.DOTALL multiline
+            # block math search, which gets executed only if we don't
+            # find inline math.
+            math_inline = re.compile(r"\$(.+?)\$")
+            math_block = re.compile(r"^\$\$(.+?)^\$\$",
+                                    re.DOTALL | re.MULTILINE)
+
+            if (math_inline.search(self.text.toPlainText()) or
+                    math_block.search(self.text.toPlainText())):
+
+                html += style.mathjax
+                mathjax_script = (
+                    '<script type="text/javascript" src="{}?config='
+                    'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
+                html += mathjax_script
+
+            html += style.articleStart
             html += self.toMarkdown(self.text.toPlainText())
-            html += css_article_end
+            html += style.articleEnd
 
             # Without a real file, intra-note tag links (#header1) won't work
             with tempfile.NamedTemporaryFile(
