@@ -284,19 +284,19 @@ class DiaryApp(QtWidgets.QMainWindow):
     def initToolbar(self):
 
         self.markdownAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("down"), "Markdown", self)
+                QtGui.QIcon.fromTheme("down"), "Toggle Markdown", self)
         self.markdownAction.setShortcut("Ctrl+M")
         self.markdownAction.setStatusTip("Toggle markdown rendering")
         self.markdownAction.triggered.connect(self.markdownToggle)
 
         self.newNoteAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("add"), "New note", self)
+                QtGui.QIcon.fromTheme("document-new"), "New note", self)
         self.newNoteAction.setShortcut("Ctrl+N")
         self.newNoteAction.setStatusTip("Create a new note")
         self.newNoteAction.triggered.connect(self.newNote)
 
         self.saveNoteAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("document-save"), "Save", self)
+                QtGui.QIcon.fromTheme("document-save"), "Save note", self)
         self.saveNoteAction.setShortcut("Ctrl+S")
         self.saveNoteAction.setStatusTip("Save note")
         self.saveNoteAction.triggered.connect(self.saveNote)
@@ -316,9 +316,11 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.setFloatable(False)
         self.toolbar.addAction(self.markdownAction)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.newNoteAction)
         self.toolbar.addAction(self.saveNoteAction)
         self.toolbar.addAction(self.deleteNoteAction)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.openDiaryAction)
 
     def loadTree(self, metadata):
