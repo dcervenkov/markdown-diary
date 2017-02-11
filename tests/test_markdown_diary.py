@@ -6,6 +6,7 @@ import unittest
 from PyQt5 import QtWidgets
 
 import markdown_diary
+import diary as d
 
 app = QtWidgets.QApplication(sys.argv)
 
@@ -18,7 +19,7 @@ class DiaryTest(unittest.TestCase):
 
     def test__init__(self):
 
-        markdown_diary.Diary(diaryFileName)
+        d.Diary(diaryFileName)
 
     def testSaveDiary(self):
 
@@ -42,7 +43,7 @@ class DiaryTest(unittest.TestCase):
 
     def testGetMetadata(self):
 
-        diary = markdown_diary.Diary(diaryFileName)
+        diary = d.Diary(diaryFileName)
         with open(diaryFileName) as f:
             diaryData = f.read()
 
@@ -65,7 +66,7 @@ class DiaryTest(unittest.TestCase):
 
     def testGetNote(self):
 
-        diary = markdown_diary.Diary(diaryFileName)
+        diary = d.Diary(diaryFileName)
         with open(diaryFileName) as f:
             diaryData = f.read()
 
@@ -96,16 +97,16 @@ class DiaryAppTest(unittest.TestCase):
     def testMarkdown(self):
 
         self.maxDiff = None
-        diary = markdown_diary.DiaryApp()
+        app = markdown_diary.DiaryApp()
         with open(noteFileName) as f:
             note = f.read()
 
         with open(htmlNoteFileName) as f:
             refNoteHtml = f.read()
 
-        diary.text.setText(note)
-        diary.markdown()
-        noteHtml = diary.web.page().mainFrame().toHtml()
+        app.text.setText(note)
+        app.markdown()
+        noteHtml = app.web.page().mainFrame().toHtml()
 
         self.assertEqual(noteHtml, refNoteHtml)
 
