@@ -31,6 +31,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         renderer = markdown_math.HighlightRenderer()
         self.toMarkdown = markdown_math.MarkdownWithMath(renderer=renderer)
 
+        self.tempFiles = []
+
         self.initUI()
 
         self.settings = QtCore.QSettings(
@@ -196,7 +198,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def markdown(self):
 
-            html = style.css
+            html = style.header
 
             # We load MathJax only when there is a good chance there is
             # math in the note. We first perform inline math search as
@@ -216,20 +218,20 @@ class DiaryApp(QtWidgets.QMainWindow):
                     'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
                 html += mathjax_script
 
-            html += style.articleStart
             html += self.toMarkdown(self.text.toPlainText())
-            html += style.articleEnd
+            html += style.footer
 
             # Without a real file, intra-note tag links (#header1) won't work
             with tempfile.NamedTemporaryFile(
                     mode="w", prefix=".markdown-diary_", suffix=".tmp",
                     dir=tempfile.gettempdir(), delete=False) as tmpf:
                 tmpf.write(html)
+                self.tempFiles.append(tmpf)
 
             # QWebView resolves relative links (like # tags) with respect to
             # the baseUrl
-            self.web.setHtml(html, baseUrl=QtCore.QUrl(
-                "file://" + tmpf.name))
+            mainPath = os.path.realpath(__file__)
+            self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
 
         # TODO: Delete tmp files
 
@@ -331,6 +333,15 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.noteDate = self.diary.getNoteMetadata(
                 self.diary.metadata, noteId)["date"]
         self.markdown()
+
+    def __del__(self):
+
+        # Delete temporary files
+        # We put it into __del__ deliberately, so if one wants, one can avoid
+        # the temporary files being deleted by killing the process. This might
+        # be useful, e.g., in case of accidental over-write.
+        for f in self.tempFiles:
+            os.unlink(f.name)
 
 
 def main():

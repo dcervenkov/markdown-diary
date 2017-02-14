@@ -1,18 +1,24 @@
-import os
+header = ('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n'
+          '"http://www.w3.org/TR/html4/strict.dtd">\n'
+          '<head>\n'
+          '<meta http-equiv="content-type" content="text/html; charset=utf-8">\n'
+          '<link rel="stylesheet" href="css/github-markdown.css">\n'
+          '<link rel="stylesheet" href="css/github-pygments.css">\n'
+          '<style type="text/css">\n'
+          '    .markdown-body {\n'
+          '        box-sizing: border-box;\n'
+          '        min-width: 200px;\n'
+          '        max-width: 980px;\n'
+          '        margin: 0 auto;\n'
+          '        padding: 45px;\n'
+          '    }\n'
+          '</style>\n'
+          '<title>Markdown Diary</title>\n'
+          '</head>\n'
+          '<body class="markdown-body">')
 
-cssDir = os.getcwd()
-
-css = ('<link rel="stylesheet" href="file://{0}/github-markdown.css">\n'
-       '<link rel="stylesheet" href="file://{0}/github-pygments.css">\n'
-       '<style>\n'
-       '    .markdown-body {{\n'
-       '        box-sizing: border-box;\n'
-       '        min-width: 200px;\n'
-       '        max-width: 980px;\n'
-       '        margin: 0 auto;\n'
-       '        padding: 45px;\n'
-       '    }}\n'
-       '</style>\n').format(cssDir)
+footer = ('</body>\n'
+          '</html>\n')
 
 mathjax = ('<style type="text/css">\n'
            '    .MathJax_Display .mi{\n'
@@ -30,6 +36,3 @@ mathjax = ('<style type="text/css">\n'
            '       tex2jax: {inlineMath: [["$","$"]]}\n'
            '   });\n'
            '</script>\n')
-
-articleStart = '<article class="markdown-body">\n'
-articleEnd = '</article>\n'
