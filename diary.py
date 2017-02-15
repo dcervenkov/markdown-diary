@@ -1,5 +1,9 @@
+import os
 import re
+import datetime
 import binascii
+import tempfile
+
 
 class Diary():
 
@@ -179,3 +183,11 @@ class Diary():
             if noteId == metaDict["note_id"]:
                 return metaDict
 
+    def searchNotes(self, pattern):
+
+        matching = []
+        for metadatum in self.metadata:
+            if pattern in self.getNote(self.data, metadatum["note_id"]):
+                matching.append(metadatum)
+
+        return matching

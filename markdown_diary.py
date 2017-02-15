@@ -4,7 +4,6 @@
 TODO: Write description
 """
 
-
 import os
 import sys
 import tempfile
@@ -15,11 +14,37 @@ import datetime
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
+from PyQt5.QtCore import pyqtRemoveInputHook
 
 from markdownhighlighter import MarkdownHighlighter
 import markdown_math
 import style
 import diary
+
+
+class MyQTextEdit(QtWidgets.QTextEdit):
+
+    def __init__(self, parent=None):
+
+        super(MyQTextEdit, self).__init__(parent)
+
+    def highlightSearch(self, pattern):
+
+        self.moveCursor(QtGui.QTextCursor.Start)
+        color = QtGui.QColor("yellow")
+
+        extraSelections = []
+
+        while self.find(pattern):
+            extra = QtWidgets.QTextEdit.ExtraSelection()
+            extra.format.setBackground(color)
+            extra.cursor = self.textCursor()
+            extraSelections.append(extra)
+
+        self.setExtraSelections(extraSelections)
+
+        self.moveCursor(QtGui.QTextCursor.Start)
+        self.find(pattern)
 
 
 class DiaryApp(QtWidgets.QMainWindow):
@@ -40,10 +65,6 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.loadSettings()
 
         self.loadDiary(self.recent_diaries[0])
-
-    def __del__(self):
-
-        pass
 
     def closeEvent(self, event):
 
@@ -66,7 +87,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.splitter = QtWidgets.QSplitter()
         self.initToolbar()
 
-        self.text = QtWidgets.QTextEdit(self)
+        self.text = MyQTextEdit(self)
         self.text.setAcceptRichText(False)
         self.text.setFont(QtGui.QFont("Ubuntu Mono"))
 
@@ -136,6 +157,16 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.deleteNoteAction.setStatusTip("Delete note")
         self.deleteNoteAction.triggered.connect(lambda: self.deleteNote())
 
+        self.searchLine = QtWidgets.QLineEdit(self)
+        self.searchLine.setFixedWidth(200)
+        self.searchLine.setPlaceholderText("Search...")
+        self.searchLine.setClearButtonEnabled(True)
+
+        self.searchLineAction = QtWidgets.QWidgetAction(self)
+        self.searchLineAction.setDefaultWidget(self.searchLine)
+        self.searchLine.textChanged.connect(self.search)
+        self.searchLine.returnPressed.connect(self.searchNext)
+
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.setFloatable(False)
         self.toolbar.addAction(self.markdownAction)
@@ -145,6 +176,8 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toolbar.addAction(self.deleteNoteAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.openDiaryAction)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.searchLineAction)
 
     def loadTree(self, metadata):
 
@@ -324,6 +357,7 @@ class DiaryApp(QtWidgets.QMainWindow):
             return
 
         item = self.tree.selectedItems()[0]
+
         self.displayNote(item.text(0))
 
     def displayNote(self, noteId):
@@ -333,6 +367,19 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.noteDate = self.diary.getNoteMetadata(
                 self.diary.metadata, noteId)["date"]
         self.markdown()
+
+    def search(self, text):
+
+        self.text.highlightSearch(self.searchLine.text())
+        entries = self.diary.searchNotes(self.searchLine.text())
+        self.loadTree(entries)
+
+    def searchNext(self):
+
+        if len(self.text.extraSelections()):
+            if not self.text.find(self.searchLine.text()):
+                self.text.moveCursor(QtGui.QTextCursor.Start)
+                self.text.find(self.searchLine.text())
 
     def __del__(self):
 
@@ -347,6 +394,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 def main():
 
     app = QtWidgets.QApplication(sys.argv)
+    pyqtRemoveInputHook()
 
     main = DiaryApp()
     main.show()
