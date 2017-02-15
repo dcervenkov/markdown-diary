@@ -266,8 +266,6 @@ class DiaryApp(QtWidgets.QMainWindow):
             mainPath = os.path.realpath(__file__)
             self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
 
-        # TODO: Delete tmp files
-
     def newNote(self):
 
         self.noteDate = datetime.date.today().isoformat()

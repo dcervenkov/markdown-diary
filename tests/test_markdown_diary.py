@@ -77,7 +77,7 @@ class DiaryTest(unittest.TestCase):
                    "Test"
                    "\n\n")
 
-        self.assertEqual(note, refNote)
+        self.assertMultiLineEqual(note, refNote)
 
     def testGetNoteMetadata(self):
 
@@ -102,13 +102,13 @@ class DiaryAppTest(unittest.TestCase):
             note = f.read()
 
         with open(htmlNoteFileName) as f:
-            refNoteHtml = f.read()
+            refNoteHtml = f.read().rstrip()
 
         app.text.setText(note)
         app.markdown()
         noteHtml = app.web.page().mainFrame().toHtml()
 
-        self.assertEqual(noteHtml, refNoteHtml)
+        self.assertMultiLineEqual(noteHtml, refNoteHtml)
 
     def testOpenDiary(self):
 
