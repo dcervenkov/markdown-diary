@@ -164,6 +164,9 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.searchLineAction = QtWidgets.QWidgetAction(self)
         self.searchLineAction.setDefaultWidget(self.searchLine)
+        self.searchLineAction.setShortcut("Ctrl+F")
+        self.searchLineAction.triggered.connect(
+                lambda: self.searchLine.setFocus())
         self.searchLine.textChanged.connect(self.search)
         self.searchLine.returnPressed.connect(self.searchNext)
 
@@ -231,40 +234,43 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def markdown(self):
 
-            html = style.header
+        html = style.header
 
-            # We load MathJax only when there is a good chance there is
-            # math in the note. We first perform inline math search as
-            # as that should be faster then the re.DOTALL multiline
-            # block math search, which gets executed only if we don't
-            # find inline math.
-            math_inline = re.compile(r"\$(.+?)\$")
-            math_block = re.compile(r"^\$\$(.+?)^\$\$",
-                                    re.DOTALL | re.MULTILINE)
+        # We load MathJax only when there is a good chance there is
+        # math in the note. We first perform inline math search as
+        # as that should be faster then the re.DOTALL multiline
+        # block math search, which gets executed only if we don't
+        # find inline math.
+        math_inline = re.compile(r"\$(.+?)\$")
+        math_block = re.compile(r"^\$\$(.+?)^\$\$",
+                                re.DOTALL | re.MULTILINE)
 
-            if (math_inline.search(self.text.toPlainText()) or
-                    math_block.search(self.text.toPlainText())):
+        if (math_inline.search(self.text.toPlainText()) or
+                math_block.search(self.text.toPlainText())):
 
-                html += style.mathjax
-                mathjax_script = (
-                    '<script type="text/javascript" src="{}?config='
-                    'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
-                html += mathjax_script
+            html += style.mathjax
+            mathjax_script = (
+                '<script type="text/javascript" src="{}?config='
+                'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
+            html += mathjax_script
 
-            html += self.toMarkdown(self.text.toPlainText())
-            html += style.footer
+        html += self.toMarkdown(self.text.toPlainText())
+        html += style.footer
 
-            # Without a real file, intra-note tag links (#header1) won't work
-            with tempfile.NamedTemporaryFile(
-                    mode="w", prefix=".markdown-diary_", suffix=".tmp",
-                    dir=tempfile.gettempdir(), delete=False) as tmpf:
-                tmpf.write(html)
-                self.tempFiles.append(tmpf)
+        # Without a real file, intra-note tag links (#header1) won't work
+        with tempfile.NamedTemporaryFile(
+                mode="w", prefix=".markdown-diary_", suffix=".tmp",
+                dir=tempfile.gettempdir(), delete=False) as tmpf:
+            tmpf.write(html)
+            self.tempFiles.append(tmpf)
 
-            # QWebView resolves relative links (like # tags) with respect to
-            # the baseUrl
-            mainPath = os.path.realpath(__file__)
-            self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
+        # QWebView resolves relative links (like # tags) with respect to
+        # the baseUrl
+        mainPath = os.path.realpath(__file__)
+        self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
+
+        if self.searchLine.text() != "":
+            self.search(self.searchLine.text())
 
     def newNote(self):
 
@@ -358,6 +364,9 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.displayNote(item.text(0))
 
+        if self.searchLine.text() != "":
+            self.search(self.searchLine.text())
+
     def displayNote(self, noteId):
 
         self.text.setText(self.diary.getNote(self.diary.data, noteId))
@@ -368,11 +377,23 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def search(self, text):
 
+        # Search in the editor
         self.text.highlightSearch(self.searchLine.text())
+
+        # Search in the WebView
+        self.web.findText("", QtWebKitWidgets.QWebPage.HighlightAllOccurrences)
+        self.web.findText(self.searchLine.text(),
+                          QtWebKitWidgets.QWebPage.HighlightAllOccurrences)
+        self.web.findText(self.searchLine.text())
+
+        # Search for matching notes
         entries = self.diary.searchNotes(self.searchLine.text())
         self.loadTree(entries)
 
     def searchNext(self):
+
+        self.web.findText(self.searchLine.text(),
+                          QtWebKitWidgets.QWebPage.FindWrapsAroundDocument)
 
         if len(self.text.extraSelections()):
             if not self.text.find(self.searchLine.text()):
