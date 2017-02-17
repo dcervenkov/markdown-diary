@@ -90,6 +90,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.text = MyQTextEdit(self)
         self.text.setAcceptRichText(False)
         self.text.setFont(QtGui.QFont("Ubuntu Mono"))
+        self.text.textChanged.connect(self.setTitle)
 
         self.web = QtWebKitWidgets.QWebView(self)
 
@@ -172,6 +173,8 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.setFloatable(False)
+        self.toolbar.setAllowedAreas(
+                QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         self.toolbar.addAction(self.markdownAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.newNoteAction)
@@ -287,6 +290,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary.saveNote(
                 self.text.toPlainText(), self.noteId, self.noteDate)
         self.text.document().setModified(False)
+        self.setTitle()
         self.loadTree(self.diary.metadata)
 
         # TODO This block is here to disallow reloading of self.text
@@ -370,6 +374,7 @@ class DiaryApp(QtWidgets.QMainWindow):
     def displayNote(self, noteId):
 
         self.text.setText(self.diary.getNote(self.diary.data, noteId))
+        self.setTitle()
         self.noteId = noteId
         self.noteDate = self.diary.getNoteMetadata(
                 self.diary.metadata, noteId)["date"]
@@ -399,6 +404,13 @@ class DiaryApp(QtWidgets.QMainWindow):
             if not self.text.find(self.searchLine.text()):
                 self.text.moveCursor(QtGui.QTextCursor.Start)
                 self.text.find(self.searchLine.text())
+
+    def setTitle(self):
+
+        if self.text.document().isModified():
+            self.setWindowTitle("*Markdown Diary")
+        else:
+            self.setWindowTitle("Markdown Diary")
 
     def __del__(self):
 
