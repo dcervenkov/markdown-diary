@@ -10,7 +10,6 @@ import tempfile
 import uuid
 import re
 import datetime
-from functools import partial
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
@@ -409,9 +408,8 @@ class DiaryApp(QtWidgets.QMainWindow):
             # Multiple signals can be connected, so to avoid old signals we
             # disconnect them
             self.recentDiariesActions[i].triggered.disconnect()
-            # using partial() is a way to send arguments with signals
             self.recentDiariesActions[i].triggered.connect(
-                    partial(self.loadDiary, recent))
+                    lambda: self.loadDiary(recent))
 
     def itemSelectionChanged(self):
 
