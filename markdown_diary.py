@@ -10,6 +10,7 @@ import tempfile
 import uuid
 import re
 import datetime
+from functools import partial
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
@@ -51,6 +52,8 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
 
+        self.MAX_RECENT_ITEMS = 10
+
         QtWidgets.QMainWindow.__init__(self, parent)
 
         renderer = markdown_math.HighlightRenderer()
@@ -64,7 +67,15 @@ class DiaryApp(QtWidgets.QMainWindow):
                 "markdown-diary", application="settings")
         self.loadSettings()
 
-        self.loadDiary(self.recent_diaries[0])
+        if len(self.recentDiaries):
+            self.loadDiary(self.recentDiaries[0])
+        else:
+            self.text.setDisabled(True)
+            self.saveNoteAction.setDisabled(True)
+            self.newNoteAction.setDisabled(True)
+            self.deleteNoteAction.setDisabled(True)
+            self.markdownAction.setDisabled(True)
+            self.searchLineAction.setDisabled(True)
 
     def closeEvent(self, event):
 
@@ -86,6 +97,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.window = QtWidgets.QWidget(self)
         self.splitter = QtWidgets.QSplitter()
         self.initToolbar()
+        self.initMenu()
 
         self.text = MyQTextEdit(self)
         self.text.setAcceptRichText(False)
@@ -93,11 +105,6 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.text.textChanged.connect(self.setTitle)
 
         self.web = QtWebKitWidgets.QWebView(self)
-
-        # This displays incorrectly
-        # self.webSettings = QtWebKit.QWebSettings.globalSettings()
-        # self.webSettings.setUserStyleSheetUrl(
-        #     QtCore.QUrl("file:///home/dc/bin/markdown-diary/github-markdown.css"))
 
         self.highlighter = MarkdownHighlighter(self.text)
 
@@ -185,6 +192,24 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.searchLineAction)
 
+    def initMenu(self):
+
+        self.fileMenu = self.menuBar().addMenu("&File")
+        self.fileMenu.addAction(self.openDiaryAction)
+        self.fileMenu.addSeparator()
+
+        self.recentDiariesActions = []
+        for i in range(self.MAX_RECENT_ITEMS):
+            action = QtWidgets.QAction(self)
+            action.setVisible(False)
+            self.recentDiariesActions.append(action)
+            self.fileMenu.addAction(action)
+
+        self.noteMenu = self.menuBar().addMenu("&Note")
+        self.noteMenu.addAction(self.newNoteAction)
+        self.noteMenu.addAction(self.saveNoteAction)
+        self.noteMenu.addAction(self.deleteNoteAction)
+
     def loadTree(self, metadata):
 
         entries = []
@@ -198,7 +223,8 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def loadSettings(self):
 
-        self.recent_diaries = ["/home/dc/bin/markdown-diary/temp/diary.md"]
+        self.recentDiaries = self.settings.value("diary/recent", [])
+        self.updateRecent()
 
         self.resize(self.settings.value(
             "window/size", QtCore.QSize(600, 400)))
@@ -226,6 +252,9 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.settings.setValue("window/splitter", self.splitter.sizes())
         self.settings.setValue("window/toolbar_area", self.toolBarArea(
             self.toolbar))
+
+        if len(self.recentDiaries):
+            self.settings.setValue("diary/recent", self.recentDiaries)
 
     def markdownToggle(self):
 
@@ -280,13 +309,20 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.noteDate = datetime.date.today().isoformat()
         self.noteId = str(uuid.uuid1())
 
-        # TODO Add note to tree
+        newEntry = QtWidgets.QTreeWidgetItem(
+            [self.noteId, self.noteDate, ""])
+
+        self.tree.addTopLevelItem(newEntry)
 
         self.text.clear()
         self.stack.setCurrentIndex(0)
+        self.text.setFocus()
 
     def saveNote(self):
 
+        # Notes should begin with a title, so strip any whitespace,
+        # including newlines from the beggining
+        self.text.setText(self.text.toPlainText().lstrip())
         self.diary.saveNote(
                 self.text.toPlainText(), self.noteId, self.noteDate)
         self.text.document().setModified(False)
@@ -327,6 +363,13 @@ class DiaryApp(QtWidgets.QMainWindow):
         if fname:
             if self.isValidDiary(fname):
                 self.loadDiary(fname)
+
+                self.text.setDisabled(False)
+                self.saveNoteAction.setDisabled(False)
+                self.newNoteAction.setDisabled(False)
+                self.deleteNoteAction.setDisabled(False)
+                self.markdownAction.setDisabled(False)
+                self.searchLineAction.setDisabled(False)
             else:
                 print("ERROR:" + fname + "is not a valid diary file!")
 
@@ -337,6 +380,7 @@ class DiaryApp(QtWidgets.QMainWindow):
 
     def loadDiary(self, fname):
 
+        self.updateRecent(fname)
         self.diary = diary.Diary(fname)
         self.loadTree(self.diary.metadata)
 
@@ -344,6 +388,30 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.tree.setCurrentItem(
                 self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
+
+    def updateRecent(self, fname=""):
+
+        if fname != "":
+            if fname in self.recentDiaries:
+                self.recentDiaries.remove(fname)
+
+            self.recentDiaries.insert(0, fname)
+
+            if len(self.recentDiaries) > 10:
+                del self.recentDiaries[:-10]
+
+        [recent.setVisible(False) for recent in self.recentDiariesActions]
+
+        for i, recent in enumerate(self.recentDiaries):
+            self.recentDiariesActions[i].setText(os.path.basename(recent))
+            self.recentDiariesActions[i].setData(recent)
+            self.recentDiariesActions[i].setVisible(True)
+            # Multiple signals can be connected, so to avoid old signals we
+            # disconnect them
+            self.recentDiariesActions[i].triggered.disconnect()
+            # using partial() is a way to send arguments with signals
+            self.recentDiariesActions[i].triggered.connect(
+                    partial(self.loadDiary, recent))
 
     def itemSelectionChanged(self):
 
