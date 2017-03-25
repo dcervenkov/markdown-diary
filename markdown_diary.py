@@ -14,7 +14,7 @@ import datetime
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebKitWidgets
-from PyQt5.QtCore import pyqtRemoveInputHook
+# from PyQt5.QtCore import pyqtRemoveInputHook # enable for debugging
 
 from markdownhighlighter import MarkdownHighlighter
 import markdown_math
@@ -22,13 +22,22 @@ import style
 import diary
 
 
-class MyQTextEdit(QtWidgets.QTextEdit):
+class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
+    """Modified QTextEdit that highlights all search matches
+    """
 
     def __init__(self, parent=None):
 
         super(MyQTextEdit, self).__init__(parent)
 
     def highlightSearch(self, pattern):
+        """Highlight all search occurences
+
+        The search is case insensitive.
+
+        Args:
+            pattern (str): The text to be highlighted
+        """
 
         self.moveCursor(QtGui.QTextCursor.Start)
         color = QtGui.QColor("yellow")
@@ -47,11 +56,28 @@ class MyQTextEdit(QtWidgets.QTextEdit):
         self.find(pattern)
 
 
-class DiaryApp(QtWidgets.QMainWindow):
+class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
+    """Diary application class inheriting from QMainWindow
+    """
 
     def __init__(self, parent=None):
 
         self.MAX_RECENT_ITEMS = 10
+
+        self.markdownAction = None
+        self.newNoteAction = None
+        self.saveNoteAction = None
+        self.deleteNoteAction = None
+        self.openDiaryAction = None
+        self.searchLineAction = None
+        self.recentDiariesActions = None
+
+        self.searchLine = None
+        self.toolbar = None
+        self.fileMenu = None
+        self.noteMenu = None
+        self.noteDate = None
+        self.noteId = None
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
@@ -63,7 +89,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.initUI()
 
         self.settings = QtCore.QSettings(
-                "markdown-diary", application="settings")
+            "markdown-diary", application="settings")
         self.loadSettings()
 
         if len(self.recentDiaries):
@@ -77,13 +103,21 @@ class DiaryApp(QtWidgets.QMainWindow):
             self.searchLineAction.setDisabled(True)
 
     def closeEvent(self, event):
+        """Check if there are unsaved changes and display dialog if there are
+
+        This redefines the basic close event to give the user a chance to save
+        his work. It also saves the current settings.
+
+        Args:
+            event (QEvent):
+        """
 
         if self.text.document().isModified():
             discardMsg = ("You have unsaved changes. "
                           "Do you want to discard them?")
             reply = QtWidgets.QMessageBox.question(
-                    self, 'Message', discardMsg,
-                    QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                self, 'Message', discardMsg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
             if reply == QtWidgets.QMessageBox.No:
                 event.ignore()
@@ -92,6 +126,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.writeSettings()
 
     def initUI(self):
+        """Initialize the UI - create widgets, set their pars, etc."""
 
         self.window = QtWidgets.QWidget(self)
         self.splitter = QtWidgets.QSplitter()
@@ -133,36 +168,38 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.window.setLayout(layout)
 
     def initToolbar(self):
+        """Initialize toolbar - create QActions and bind to functions, etc."""
 
         self.markdownAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("down"), "Toggle Markdown", self)
+            QtGui.QIcon.fromTheme("down"), "Toggle Markdown", self)
         self.markdownAction.setShortcut("Ctrl+M")
         self.markdownAction.setStatusTip("Toggle markdown rendering")
         self.markdownAction.triggered.connect(self.markdownToggle)
 
         self.newNoteAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("document-new"), "New note", self)
+            QtGui.QIcon.fromTheme("document-new"), "New note", self)
         self.newNoteAction.setShortcut("Ctrl+N")
         self.newNoteAction.setStatusTip("Create a new note")
         self.newNoteAction.triggered.connect(self.newNote)
 
         self.saveNoteAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("document-save"), "Save note", self)
+            QtGui.QIcon.fromTheme("document-save"), "Save note", self)
         self.saveNoteAction.setShortcut("Ctrl+S")
         self.saveNoteAction.setStatusTip("Save note")
         self.saveNoteAction.triggered.connect(self.saveNote)
 
         self.openDiaryAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("document-open"), "Open diary", self)
+            QtGui.QIcon.fromTheme("document-open"), "Open diary", self)
         self.openDiaryAction.setShortcut("Ctrl+O")
         self.openDiaryAction.setStatusTip("Open diary")
         self.openDiaryAction.triggered.connect(self.openDiary)
 
         self.deleteNoteAction = QtWidgets.QAction(
-                QtGui.QIcon.fromTheme("remove"), "Delete Note", self)
+            QtGui.QIcon.fromTheme("remove"), "Delete Note", self)
         self.deleteNoteAction.setShortcut("Del")
         self.deleteNoteAction.setStatusTip("Delete note")
-        self.deleteNoteAction.triggered.connect(lambda: self.deleteNote())
+        self.deleteNoteAction.triggered.connect(
+            lambda: self.deleteNote())  # pylint: disable=unnecessary-lambda
 
         self.searchLine = QtWidgets.QLineEdit(self)
         self.searchLine.setFixedWidth(200)
@@ -173,14 +210,14 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.searchLineAction.setDefaultWidget(self.searchLine)
         self.searchLineAction.setShortcut("Ctrl+F")
         self.searchLineAction.triggered.connect(
-                lambda: self.searchLine.setFocus())
+            lambda: self.searchLine.setFocus())  # pylint: disable=unnecessary-lambda
         self.searchLine.textChanged.connect(self.search)
         self.searchLine.returnPressed.connect(self.searchNext)
 
         self.toolbar = self.addToolBar("Main toolbar")
         self.toolbar.setFloatable(False)
         self.toolbar.setAllowedAreas(
-                QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
+            QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         self.toolbar.addAction(self.markdownAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.newNoteAction)
@@ -192,13 +229,14 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.toolbar.addAction(self.searchLineAction)
 
     def initMenu(self):
+        """Create the main application menu - File, etc."""
 
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openDiaryAction)
         self.fileMenu.addSeparator()
 
         self.recentDiariesActions = []
-        for i in range(self.MAX_RECENT_ITEMS):
+        for _ in range(self.MAX_RECENT_ITEMS):
             action = QtWidgets.QAction(self)
             action.setVisible(False)
             self.recentDiariesActions.append(action)
@@ -210,6 +248,11 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.noteMenu.addAction(self.deleteNoteAction)
 
     def loadTree(self, metadata):
+        """Load notes tree from diary metadata
+
+         Load notes tree from diary metadata and populate the QTreeWidget
+         with it.
+        """
 
         entries = []
 
@@ -221,6 +264,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.tree.addTopLevelItems(entries)
 
     def loadSettings(self):
+        """Load settings via self.settings QSettings object"""
 
         self.recentDiaries = self.settings.value("diary/recent", [])
         self.updateRecent()
@@ -241,10 +285,11 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.addToolBar(QtCore.Qt.ToolBarArea(toolBarArea), self.toolbar)
 
         self.mathjax = self.settings.value(
-                "mathjax/location",
-                "https://cdn.mathjax.org/mathjax/latest/MathJax.js")
+            "mathjax/location",
+            "https://cdn.mathjax.org/mathjax/latest/MathJax.js")
 
     def writeSettings(self):
+        """Save settings via self.settings QSettings object"""
 
         self.settings.setValue("window/size", self.size())
         self.settings.setValue("window/position", self.pos())
@@ -256,6 +301,7 @@ class DiaryApp(QtWidgets.QMainWindow):
             self.settings.setValue("diary/recent", self.recentDiaries)
 
     def markdownToggle(self):
+        """Switch between displaying Markdown source and rendered HTML"""
 
         if self.stack.currentIndex() == 1:
             self.stack.setCurrentIndex(0)
@@ -264,6 +310,7 @@ class DiaryApp(QtWidgets.QMainWindow):
             self.markdown()
 
     def markdown(self):
+        """Process Markdown source into HTML"""
 
         html = style.header
 
@@ -285,7 +332,8 @@ class DiaryApp(QtWidgets.QMainWindow):
                 'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
             html += mathjax_script
 
-        html += self.toMarkdown(self.text.toPlainText())
+        html += self.toMarkdown(self.text.toPlainText()
+                                )  # pylint: disable=not-callable
         html += style.footer
 
         # Without a real file, intra-note tag links (#header1) won't work
@@ -301,9 +349,13 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
 
         if self.searchLine.text() != "":
-            self.search(self.searchLine.text())
+            self.search()
 
     def newNote(self):
+        """Create an empty note and add it to the QTreeWidget
+
+        The note is not added to the diary until it is saved.
+        """
 
         self.noteDate = datetime.date.today().isoformat()
         self.noteId = str(uuid.uuid1())
@@ -318,12 +370,16 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.text.setFocus()
 
     def saveNote(self):
+        """Save the displayed note
+
+        Either updates an existing note or adds a new one to a diary.
+        """
 
         # Notes should begin with a title, so strip any whitespace,
         # including newlines from the beggining
         self.text.setText(self.text.toPlainText().lstrip())
         self.diary.saveNote(
-                self.text.toPlainText(), self.noteId, self.noteDate)
+            self.text.toPlainText(), self.noteId, self.noteDate)
         self.text.document().setModified(False)
         self.setTitle()
         self.loadTree(self.diary.metadata)
@@ -332,15 +388,23 @@ class DiaryApp(QtWidgets.QMainWindow):
         # which moves the cursor up. Make it more elegant than this!
         self.tree.blockSignals(True)
         self.tree.setCurrentItem(
-                self.tree.findItems(self.noteId, QtCore.Qt.MatchExactly)[0])
+            self.tree.findItems(self.noteId, QtCore.Qt.MatchExactly)[0])
         self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
+        """Delete a specified note
+
+         If there are unsaved changes, prompt the user. Refresh note tree
+         after deletion.
+
+        Args:
+            noteId (str, optional): UUID of the note to delete
+        """
 
         deleteMsg = "Do you really want to delete the note?"
         reply = QtWidgets.QMessageBox.question(
-                self, 'Message', deleteMsg,
-                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+            self, 'Message', deleteMsg,
+            QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.No:
             return
@@ -351,13 +415,18 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.diary.deleteNote(noteId)
         self.loadTree(self.diary.metadata)
         self.tree.setCurrentItem(
-                self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
+            self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
 
     def openDiary(self):
+        """Display a file open dialog and load the selected diary
+
+         Enable relevant toolbar items (new note, save note, etc.), in case
+         no diary was open before and they were disabled.
+        """
 
         fname = QtWidgets.QFileDialog.getOpenFileName(
-                caption="Open Diary",
-                filter="Markdown Files (*.md);;All Files (*)")[0]
+            caption="Open Diary",
+            filter="Markdown Files (*.md);;All Files (*)")[0]
 
         if fname:
             if self.isValidDiary(fname):
@@ -373,11 +442,26 @@ class DiaryApp(QtWidgets.QMainWindow):
                 print("ERROR:" + fname + "is not a valid diary file!")
 
     def isValidDiary(self, fname):
+        """Check if a file path leads to a valid diary
+
+        Args:
+            fname (str): Path to a diary file to be validated.
+
+        Returns:
+            bool: True for valid, False for invalid diary.
+        """
 
         # TODO Implement checks
         return True
 
     def loadDiary(self, fname):
+        """Load diary from file
+
+        Display last note from the diary.
+
+        Args:
+            fname (str): Path to a file containing a diary.
+        """
 
         self.updateRecent(fname)
         self.diary = diary.Diary(fname)
@@ -385,10 +469,20 @@ class DiaryApp(QtWidgets.QMainWindow):
 
         lastNoteId = self.diary.metadata[-1]["note_id"]
         self.tree.setCurrentItem(
-                self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
+            self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
 
     def updateRecent(self, fname=""):
+        """Update list of recently opened diaries
+
+         When fname is specified, adds/moves the specified diary to the
+         beggining of a list. Otherwise just populates the list in the file
+         menu.
+
+        Args:
+             fname (str, optional): The most recent diary to be added/moved
+                to the top of the list.
+        """
 
         if fname != "":
             if fname in self.recentDiaries:
@@ -399,7 +493,8 @@ class DiaryApp(QtWidgets.QMainWindow):
             if len(self.recentDiaries) > 10:
                 del self.recentDiaries[:-10]
 
-        [recent.setVisible(False) for recent in self.recentDiariesActions]
+        for recent in self.recentDiariesActions:
+            recent.setVisible(False)
 
         for i, recent in enumerate(self.recentDiaries):
             self.recentDiariesActions[i].setText(os.path.basename(recent))
@@ -409,21 +504,26 @@ class DiaryApp(QtWidgets.QMainWindow):
             # disconnect them
             self.recentDiariesActions[i].triggered.disconnect()
             self.recentDiariesActions[i].triggered.connect(
-                    lambda: self.loadDiary(recent))
+                lambda: self.loadDiary(recent))
 
     def itemSelectionChanged(self):
+        """Display a new selected note
+
+         Prompts the user if there is unsaved work. If there is an active
+         search, reruns it on the new note.
+        """
 
         if self.text.document().isModified():
             discardMsg = ("You have unsaved changes. "
                           "Do you want to discard them?")
             reply = QtWidgets.QMessageBox.question(
-                    self, 'Message', discardMsg,
-                    QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                self, 'Message', discardMsg,
+                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
             if reply == QtWidgets.QMessageBox.No:
                 self.tree.blockSignals(True)
                 self.tree.setCurrentItem(self.tree.findItems(
-                            self.noteId, QtCore.Qt.MatchExactly)[0])
+                    self.noteId, QtCore.Qt.MatchExactly)[0])
                 self.tree.blockSignals(False)
                 return
 
@@ -435,18 +535,25 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.displayNote(item.text(0))
 
         if self.searchLine.text() != "":
-            self.search(self.searchLine.text())
+            self.search()
 
     def displayNote(self, noteId):
+        """Display a specified note"""
 
         self.text.setText(self.diary.getNote(self.diary.data, noteId))
         self.setTitle()
         self.noteId = noteId
         self.noteDate = self.diary.getNoteMetadata(
-                self.diary.metadata, noteId)["date"]
+            self.diary.metadata, noteId)["date"]
         self.markdown()
 
-    def search(self, text):
+    def search(self):
+        """Search and highlight text in all notes
+
+         Highlights text occurrences in the editor and web view. Searches all
+         notes for the text and removes non-matching from the note tree. The
+         text to search for is taken from the searchLine widget.
+        """
 
         # Search in the editor
         self.text.highlightSearch(self.searchLine.text())
@@ -462,6 +569,7 @@ class DiaryApp(QtWidgets.QMainWindow):
         self.loadTree(entries)
 
     def searchNext(self):
+        """Move main highlight (and scroll) to the next search match"""
 
         self.web.findText(self.searchLine.text(),
                           QtWebKitWidgets.QWebPage.FindWrapsAroundDocument)
@@ -472,6 +580,7 @@ class DiaryApp(QtWidgets.QMainWindow):
                 self.text.find(self.searchLine.text())
 
     def setTitle(self):
+        """Set the application title; add '*' if editor in dirty state"""
 
         if self.text.document().isModified():
             self.setWindowTitle("*Markdown Diary")
@@ -489,14 +598,16 @@ class DiaryApp(QtWidgets.QMainWindow):
 
 
 def main():
+    """Run the whole QApplication"""
 
     app = QtWidgets.QApplication(sys.argv)
-    pyqtRemoveInputHook()
+    # pyqtRemoveInputHook() # enable for debugging
 
-    main = DiaryApp()
-    main.show()
+    diaryApp = DiaryApp()
+    diaryApp.show()
 
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()

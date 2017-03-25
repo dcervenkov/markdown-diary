@@ -3,3 +3,6 @@ temp
 # Compiled Python code
 __pycache__
 *.pyc
+
+# VS Code files
+.vscode
