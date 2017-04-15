@@ -13,7 +13,7 @@ import datetime
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
-from PyQt5 import QtWebKitWidgets
+from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineView
 # from PyQt5.QtCore import pyqtRemoveInputHook # enable for debugging
 
 from markdownhighlighter import MarkdownHighlighter
@@ -138,7 +138,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.setFont(QtGui.QFont("Ubuntu Mono"))
         self.text.textChanged.connect(self.setTitle)
 
-        self.web = QtWebKitWidgets.QWebView(self)
+        self.web = QWebEngineView(self)
 
         self.highlighter = MarkdownHighlighter(self.text)
 
@@ -343,7 +343,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             tmpf.write(html)
             self.tempFiles.append(tmpf)
 
-        # QWebView resolves relative links (like # tags) with respect to
+        # QWebEngineView resolves relative links (like # tags) with respect to
         # the baseUrl
         mainPath = os.path.realpath(__file__)
         self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
@@ -559,9 +559,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.highlightSearch(self.searchLine.text())
 
         # Search in the WebView
-        self.web.findText("", QtWebKitWidgets.QWebPage.HighlightAllOccurrences)
+        self.web.findText("", QWebEnginePage.HighlightAllOccurrences)
         self.web.findText(self.searchLine.text(),
-                          QtWebKitWidgets.QWebPage.HighlightAllOccurrences)
+                          QWebEnginePage.HighlightAllOccurrences)
         self.web.findText(self.searchLine.text())
 
         # Search for matching notes
@@ -572,7 +572,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         """Move main highlight (and scroll) to the next search match"""
 
         self.web.findText(self.searchLine.text(),
-                          QtWebKitWidgets.QWebPage.FindWrapsAroundDocument)
+                          QWebEnginePage.FindWrapsAroundDocument)
 
         if len(self.text.extraSelections()):
             if not self.text.find(self.searchLine.text()):

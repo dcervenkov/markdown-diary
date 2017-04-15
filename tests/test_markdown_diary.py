@@ -1,4 +1,4 @@
-# To be run using `python3 -m unittest discover` from the root dir (`../`)
+# To be run using `python3 -m unittest` from the root dir (`../`)
 
 import sys
 import unittest
@@ -86,6 +86,10 @@ class DiaryTest(unittest.TestCase):
 
 class DiaryAppTest(unittest.TestCase):
 
+    def setUp(self):
+
+        self.diary_app = markdown_diary.DiaryApp()
+
     def testLoadTree(self):
 
         pass
@@ -97,18 +101,28 @@ class DiaryAppTest(unittest.TestCase):
     def testMarkdown(self):
 
         self.maxDiff = None
-        app = markdown_diary.DiaryApp()
         with open(noteFileName) as f:
             note = f.read()
 
         with open(htmlNoteFileName) as f:
             refNoteHtml = f.read().rstrip()
 
-        app.text.setText(note)
-        app.markdown()
-        noteHtml = app.web.page().mainFrame().toHtml()
+        self.diary_app.text.setText(note)
+        self.diary_app.markdown()
 
-        self.assertMultiLineEqual(noteHtml, refNoteHtml)
+        self.diary_app.web.loadFinished.connect(self._loadFinished)
+        self.noteHtml = None
+        app.exec_()
+        self.assertMultiLineEqual(self.noteHtml, refNoteHtml)
+
+    def _loadFinished(self, result):
+
+        self.diary_app.web.page().toHtml(self._saveHtml)
+
+    def _saveHtml(self, html):
+
+        self.noteHtml = html
+        app.quit()
 
     def testOpenDiary(self):
 
