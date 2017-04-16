@@ -5,7 +5,7 @@ python:
     - "3.5"
 
 install:
-    pip install pyqt5 pygments mistune
+    pip install codecov pyqt5 pygments mistune
 
 # Start virtual X server, from https://docs.travis-ci.com/user/gui-and-headless-browsers/
 before_script:
@@ -14,4 +14,7 @@ before_script:
   - sleep 3 # give xvfb some time to start
 
 script:
-  - cd ${TRAVIS_BUILD_DIR} && python -m unittest
+  - cd ${TRAVIS_BUILD_DIR} && coverage run -m unittest
+
+after_success:
+  - codecov
