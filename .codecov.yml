@@ -2,3 +2,5 @@ coverage:
   ignore:
     - "tests"
     - "style.py"
+    - "markdownhighlighter.py"
+    - "markdown_math.py"
