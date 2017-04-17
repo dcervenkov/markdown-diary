@@ -307,10 +307,17 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.stack.setCurrentIndex(0)
         else:
             self.stack.setCurrentIndex(1)
-            self.markdown()
+            self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
-    def markdown(self):
-        """Process Markdown source into HTML"""
+    def createHTML(self, markdownText):
+        """Create full, valid HTML from Markdown source
+
+        Args:
+            markdownText (str): Markdown source to convert to HTML
+
+        Returns:
+            Full HTML page text.
+        """
 
         html = style.header
 
@@ -319,12 +326,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # as that should be faster then the re.DOTALL multiline
         # block math search, which gets executed only if we don't
         # find inline math.
-        math_inline = re.compile(r"\$(.+?)\$")
-        math_block = re.compile(r"^\$\$(.+?)^\$\$",
+        mathInline = re.compile(r"\$(.+?)\$")
+        mathBlock = re.compile(r"^\$\$(.+?)^\$\$",
                                 re.DOTALL | re.MULTILINE)
 
-        if (math_inline.search(self.text.toPlainText()) or
-                math_block.search(self.text.toPlainText())):
+        if mathInline.search(markdownText or mathBlock.search(markdownText)):
 
             html += style.mathjax
             mathjax_script = (
@@ -332,9 +338,14 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
             html += mathjax_script
 
-        html += self.toMarkdown(self.text.toPlainText()
-                                )  # pylint: disable=not-callable
+        html += self.toMarkdown(markdownText)  # pylint: disable=not-callable
         html += style.footer
+        return html
+
+    def displayHTMLRenderedMarkdown(self, markdownText):
+        """Display HTML rendered Markdown"""
+
+        html = self.createHTML(markdownText)
 
         # Without a real file, intra-note tag links (#header1) won't work
         with tempfile.NamedTemporaryFile(
@@ -545,7 +556,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteId = noteId
         self.noteDate = self.diary.getNoteMetadata(
             self.diary.metadata, noteId)["date"]
-        self.markdown()
+        self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
     def search(self):
         """Search and highlight text in all notes

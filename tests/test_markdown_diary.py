@@ -2,6 +2,8 @@
 
 import sys
 import unittest
+from shutil import copyfile
+import os
 
 from PyQt5 import QtWidgets
 
@@ -10,20 +12,39 @@ import diary as d
 
 app = QtWidgets.QApplication(sys.argv)
 
+tempDiaryFileName = 'tests/diary_temp.md'
 diaryFileName = 'tests/diary.md'
 noteFileName = 'tests/note.md'
-htmlNoteFileName = 'tests/note.html'
+HTMLNoteFileName = 'tests/note.html'
+rawHTMLNoteFileName = 'tests/note_raw.html'
 
 
 class DiaryTest(unittest.TestCase):
 
+    def setUp(self):
+
+        # create a temporary diary to be used in tests
+        copyfile(diaryFileName, tempDiaryFileName)
+
+        self.diary = d.Diary(tempDiaryFileName)
+
+    def tearDown(self):
+
+        # Delete the temporary diary
+        os.remove(tempDiaryFileName)
+
     def test__init__(self):
 
-        d.Diary(diaryFileName)
-
-    def testSaveDiary(self):
-
         pass
+
+    def test_saving_of_a_diary(self):
+
+        self.diary.saveDiary('TEST')
+
+        with open(tempDiaryFileName) as f:
+            diaryData = f.read()
+
+        self.assertEqual(diaryData, 'TEST')
 
     def testSaveNote(self):
 
@@ -33,21 +54,26 @@ class DiaryTest(unittest.TestCase):
 
         pass
 
-    def testUpdateNote(self):
+    def test_updating_of_a_note(self):
+
+        self.diary.updateNote('TEST', 'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1999-01-01')
+        note = self.diary.getNote(self.diary.data, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        noteDate = self.diary.getNoteMetadata(
+            self.diary.metadata, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')['date']
+
+        self.assertEqual(note, 'TEST\n')
+        self.assertEqual(noteDate, '1999-01-01')
+
+    def test_deleting_of_a_note(self):
 
         pass
 
-    def testDeleteNote(self):
+    def test_getting_of_metadata_from_diary(self):
 
-        pass
-
-    def testGetMetadata(self):
-
-        diary = d.Diary(diaryFileName)
         with open(diaryFileName) as f:
             diaryData = f.read()
 
-        metadata = diary.getMetadata(diaryData)
+        metadata = self.diary.getMetadata(diaryData)
 
         refMetadata = [{'version': '3',
                         'title': 'Short note',
@@ -64,13 +90,12 @@ class DiaryTest(unittest.TestCase):
 
         self.assertListEqual(metadata, refMetadata)
 
-    def testGetNote(self):
+    def test_getting_of_a_note(self):
 
-        diary = d.Diary(diaryFileName)
         with open(diaryFileName) as f:
             diaryData = f.read()
 
-        note = diary.getNote(diaryData, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        note = self.diary.getNote(diaryData, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
 
         refNote = ("# Short note"
                    "\n\n"
@@ -98,17 +123,29 @@ class DiaryAppTest(unittest.TestCase):
 
         pass
 
-    def testMarkdown(self):
+    def test_creating_HTML_from_Markdown(self):
 
         self.maxDiff = None
         with open(noteFileName) as f:
             note = f.read()
 
-        with open(htmlNoteFileName) as f:
+        with open(rawHTMLNoteFileName) as f:
+            refNoteHtml = f.read()
+
+        noteHtml = self.diary_app.createHTML(note)
+
+        self.assertMultiLineEqual(noteHtml, refNoteHtml)
+
+    def test_displaying_of_HTML_rendered_Markdown(self):
+
+        self.maxDiff = None
+        with open(noteFileName) as f:
+            note = f.read()
+
+        with open(HTMLNoteFileName) as f:
             refNoteHtml = f.read().rstrip()
 
-        self.diary_app.text.setText(note)
-        self.diary_app.markdown()
+        self.diary_app.displayHTMLRenderedMarkdown(note)
 
         self.diary_app.web.loadFinished.connect(self._loadFinished)
         self.noteHtml = None
