@@ -66,7 +66,23 @@ class DiaryTest(unittest.TestCase):
 
     def test_deleting_of_a_note(self):
 
-        pass
+        self.diary.deleteNote('a3ea0c44-ed00-11e6-a9cf-c4850828558c')
+
+        with open(tempDiaryFileName) as f:
+            diaryData = f.read()
+
+        metadata = self.diary.getMetadata(diaryData)
+
+        refMetadata = [{'version': '3',
+                        'title': 'Short note',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
+                        'date': '2015-05-05'},
+                       {'version': '3',
+                        'title': 'Short note 2',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000001',
+                        'date': '2015-05-09'}]
+
+        self.assertListEqual(metadata, refMetadata)
 
     def test_getting_of_metadata_from_diary(self):
 
@@ -104,9 +120,17 @@ class DiaryTest(unittest.TestCase):
 
         self.assertMultiLineEqual(note, refNote)
 
-    def testGetNoteMetadata(self):
+    def test_getting_note_metadata(self):
 
-        pass
+        noteMetadata = self.diary.getNoteMetadata(
+            self.diary.metadata, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+
+        refMetadata = {'version': '3',
+                        'title': 'Short note',
+                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
+                        'date': '2015-05-05'}
+
+        self.assertEqual(noteMetadata, refMetadata)
 
 
 class DiaryAppTest(unittest.TestCase):
