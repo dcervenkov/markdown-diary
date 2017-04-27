@@ -8,12 +8,12 @@ A simple Markdown note taking application.
 
 ## Installation
 
-You need to have the following libraries installed: 
+You need python3 with the following libraries: 
  - `pyqt5` Qt5 and its Python bindings
  - `mistune` Markdown parser
  - `pygments` syntax highlighter
 
-You can install them easily using `pip` 
+You can install them easily using `pip3` 
 ```
-pip install pyqt5 pygments mistune
+pip3 install pyqt5 pygments mistune
 ```
