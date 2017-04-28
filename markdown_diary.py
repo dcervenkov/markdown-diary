@@ -379,6 +379,15 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.clear()
         self.stack.setCurrentIndex(0)
         self.text.setFocus()
+        self.text.setText("# <Untitled note>")
+        self.saveNote()
+
+        # Select the '<Untitled note>' part of the new note for convenient
+        # renaming
+        cursor = self.text.textCursor()
+        cursor.setPosition(2)
+        cursor.setPosition(17, QtGui.QTextCursor.KeepAnchor)
+        self.text.setTextCursor(cursor)
 
     def saveNote(self):
         """Save the displayed note
@@ -386,12 +395,18 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Either updates an existing note or adds a new one to a diary.
         """
 
+        if self.text.toPlainText().lstrip() == "":
+            QtWidgets.QMessageBox.information(
+                self, 'Message', "You can't save an empty note!")
+            return
+
         # Notes should begin with a title, so strip any whitespace,
         # including newlines from the beggining
         self.diary.saveNote(
             self.text.toPlainText().lstrip(), self.noteId, self.noteDate)
         self.text.document().setModified(False)
         self.setTitle()
+
         self.loadTree(self.diary.metadata)
 
         # TODO This block is here to disallow reloading of self.text
@@ -423,6 +438,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             noteId = self.noteId
         nextNoteId = self.tree.itemBelow(self.tree.currentItem()).text(0)
         self.diary.deleteNote(noteId)
+        self.text.document().setModified(False)
         self.loadTree(self.diary.metadata)
         self.tree.setCurrentItem(
             self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
@@ -523,26 +539,44 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
          search, reruns it on the new note.
         """
 
-        if self.text.document().isModified():
-            discardMsg = ("You have unsaved changes. "
-                          "Do you want to discard them?")
-            reply = QtWidgets.QMessageBox.question(
-                self, 'Message', discardMsg,
-                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
-
-            if reply == QtWidgets.QMessageBox.No:
-                self.tree.blockSignals(True)
-                self.tree.setCurrentItem(self.tree.findItems(
-                    self.noteId, QtCore.Qt.MatchExactly)[0])
-                self.tree.blockSignals(False)
-                return
-
-        if len(self.tree.selectedItems()) != 1:
+        if len(self.tree.selectedItems()) == 0:
             return
 
-        item = self.tree.selectedItems()[0]
+        newNoteId = self.tree.selectedItems()[0].text(0)
 
-        self.displayNote(item.text(0))
+        if self.text.document().isModified():
+            # Keep the cursor on the note in question while the dialog is
+            # displayed
+            self.tree.blockSignals(True)
+            self.tree.setCurrentItem(self.tree.findItems(
+                self.noteId, QtCore.Qt.MatchExactly)[0])
+            self.tree.blockSignals(False)
+
+            msgBox = QtWidgets.QMessageBox()
+            msgBox.setIcon(QtWidgets.QMessageBox.Question)
+            msgBox.setText("Save changes before closing note?")
+            msgBox.setStandardButtons(
+                QtWidgets.QMessageBox.Save |
+                QtWidgets.QMessageBox.Discard |
+                QtWidgets.QMessageBox.Cancel)
+            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
+            reply = msgBox.exec()
+
+            # We just save note/flag it as unmodified and recursively call
+            # this method again
+            if reply == QtWidgets.QMessageBox.Save:
+                self.saveNote()
+                self.tree.setCurrentItem(self.tree.findItems(
+                    newNoteId, QtCore.Qt.MatchExactly)[0])
+
+            elif reply == QtWidgets.QMessageBox.Discard:
+                self.text.document().setModified(False)
+                self.tree.setCurrentItem(self.tree.findItems(
+                    newNoteId, QtCore.Qt.MatchExactly)[0])
+
+            return
+
+        self.displayNote(newNoteId)
 
         if self.searchLine.text() != "":
             self.search()
