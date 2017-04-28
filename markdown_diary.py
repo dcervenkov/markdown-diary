@@ -62,7 +62,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def __init__(self, parent=None):
 
-        self.MAX_RECENT_ITEMS = 10
+        self.maxRecentItems = 10
 
         self.markdownAction = None
         self.newNoteAction = None
@@ -236,7 +236,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.fileMenu.addSeparator()
 
         self.recentDiariesActions = []
-        for _ in range(self.MAX_RECENT_ITEMS):
+        for _ in range(self.maxRecentItems):
             action = QtWidgets.QAction(self)
             action.setVisible(False)
             self.recentDiariesActions.append(action)
@@ -275,8 +275,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.move(self.settings.value(
             "window/position", QtCore.QPoint(200, 200)))
 
-        self.splitter.setSizes(list(map(int, self.settings.value(
-            "window/splitter", [70, 30]))))
+        self.splitter.setSizes(
+            [int(val) for val in self.settings.value("window/splitter", [70, 30])])
 
         toolBarArea = int(self.settings.value("window/toolbar_area",
                                               QtCore.Qt.TopToolBarArea))
@@ -328,15 +328,15 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # find inline math.
         mathInline = re.compile(r"\$(.+?)\$")
         mathBlock = re.compile(r"^\$\$(.+?)^\$\$",
-                                re.DOTALL | re.MULTILINE)
+                               re.DOTALL | re.MULTILINE)
 
         if mathInline.search(markdownText or mathBlock.search(markdownText)):
 
             html += style.mathjax
-            mathjax_script = (
+            mathjaxScript = (
                 '<script type="text/javascript" src="{}?config='
                 'TeX-AMS-MML_HTMLorMML"></script>\n').format(self.mathjax)
-            html += mathjax_script
+            html += mathjaxScript
 
         html += self.toMarkdown(markdownText)  # pylint: disable=not-callable
         html += style.footer
@@ -388,9 +388,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         # Notes should begin with a title, so strip any whitespace,
         # including newlines from the beggining
-        self.text.setText(self.text.toPlainText().lstrip())
         self.diary.saveNote(
-            self.text.toPlainText(), self.noteId, self.noteDate)
+            self.text.toPlainText().lstrip(), self.noteId, self.noteDate)
         self.text.document().setModified(False)
         self.setTitle()
         self.loadTree(self.diary.metadata)
