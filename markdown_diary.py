@@ -78,6 +78,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteMenu = None
         self.noteDate = None
         self.noteId = None
+        self.recentDiaries = None
+        self.recentNotes = None
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
@@ -266,7 +268,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def loadSettings(self):
         """Load settings via self.settings QSettings object"""
 
-        self.recentDiaries = self.settings.value("diary/recent", [])
+        self.recentDiaries = self.settings.value("diary/recent_diaries", [])
+        self.recentNotes = self.settings.value("diary/recent_notes", [])
         self.updateRecent()
 
         self.resize(self.settings.value(
@@ -298,7 +301,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.toolbar))
 
         if len(self.recentDiaries):
-            self.settings.setValue("diary/recent", self.recentDiaries)
+            self.settings.setValue("diary/recent_diaries", self.recentDiaries)
+
+        if len(self.recentNotes):
+            self.settings.setValue("diary/recent_notes", self.recentNotes)
 
     def markdownToggle(self):
         """Switch between displaying Markdown source and rendered HTML"""
@@ -493,7 +499,14 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.diary = diary.Diary(fname)
         self.loadTree(self.diary.metadata)
 
-        lastNoteId = self.diary.metadata[-1]["note_id"]
+        # Check if we saved a recent noteId for this diary and open it if we
+        # did, otherwise open the newest note
+        if (len(self.recentNotes) and any(self.recentNotes[0] in metaDict["note_id"]
+                                          for metaDict in self.diary.metadata)):
+            lastNoteId = self.recentNotes[0]
+        else:
+            lastNoteId = self.diary.metadata[-1]["note_id"]
+
         self.tree.setCurrentItem(
             self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
@@ -516,8 +529,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
             self.recentDiaries.insert(0, fname)
 
-            if len(self.recentDiaries) > 10:
-                del self.recentDiaries[:-10]
+            if len(self.recentDiaries) > self.maxRecentItems:
+                del self.recentDiaries[:-self.maxRecentItems]
 
         for recent in self.recentDiariesActions:
             recent.setVisible(False)
@@ -531,6 +544,24 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.recentDiariesActions[i].triggered.disconnect()
             self.recentDiariesActions[i].triggered.connect(
                 lambda: self.loadDiary(recent))
+
+    def updateRecentNotes(self, noteId):
+        """Update list of recently viewed notes
+
+        Adds/moves the specified noteId to the beggining of the list.
+
+        Args:
+            noteId (str): The most recent note to be added/moved to the top
+                of the list.
+        """
+
+        if noteId in self.recentNotes:
+            self.recentNotes.remove(noteId)
+
+        self.recentNotes.insert(0, noteId)
+
+        if len(self.recentNotes) > self.maxRecentItems:
+            del self.recentNotes[:-self.maxRecentItems]
 
     def itemSelectionChanged(self):
         """Display a new selected note
@@ -587,6 +618,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.setText(self.diary.getNote(self.diary.data, noteId))
         self.setTitle()
         self.noteId = noteId
+        self.updateRecentNotes(noteId)
         self.noteDate = self.diary.getNoteMetadata(
             self.diary.metadata, noteId)["date"]
         self.displayHTMLRenderedMarkdown(self.text.toPlainText())

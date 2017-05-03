@@ -189,6 +189,16 @@ class DiaryAppTest(unittest.TestCase):
 
         pass
 
+    def testUpdateRecentNotes(self):
+
+        self.diary_app.recentNotes = ['a1', 'b2', 'c3']
+        self.diary_app.updateRecentNotes('b2')
+
+        self.assertListEqual(self.diary_app.recentNotes, ['b2', 'a1', 'c3'])
+
+        self.diary_app.updateRecentNotes('d4')
+        self.assertListEqual(self.diary_app.recentNotes, ['d4', 'b2', 'a1', 'c3'])
+
 
 if __name__ == '__main__':
     unittest.main()
