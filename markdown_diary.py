@@ -289,7 +289,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.mathjax = self.settings.value(
             "mathjax/location",
-            "https://cdn.mathjax.org/mathjax/latest/MathJax.js")
+            "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js")
 
     def writeSettings(self):
         """Save settings via self.settings QSettings object"""
