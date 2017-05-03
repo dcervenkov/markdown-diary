@@ -1,3 +1,4 @@
+"""Module containing markdown-diary's actual Diary class."""
 import os
 import re
 import datetime
@@ -6,9 +7,18 @@ import tempfile
 
 
 class Diary():
+    """Class handling all the diary and note manipulation.
+
+    The Diary is a data container and manipulation class. It can create and
+    delete notes and diaries.
+    """
 
     def __init__(self, fname):
+        """Init method that reads in a diary from a file.
 
+        Args:
+            fname (str): Path to the diary to be loaded.
+        """
         self.fname = fname
         with open(fname) as f:
             self.data = f.read()
@@ -75,8 +85,8 @@ class Diary():
                 """, re.MULTILINE | re.VERBOSE | re.DOTALL)
 
         reHeaderNext = re.compile(
-                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
-                re.MULTILINE)
+            r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+            re.MULTILINE)
 
         header = reHeader.search(self.data)
         nextHeader = reHeaderNext.search(self.data, header.end())
@@ -106,8 +116,8 @@ class Diary():
                 """, re.MULTILINE | re.VERBOSE | re.DOTALL)
 
         reHeaderNext = re.compile(
-                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
-                re.MULTILINE)
+            r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+            re.MULTILINE)
 
         header = reHeader.search(self.data)
         nextHeader = reHeaderNext.search(self.data, header.end())
@@ -166,8 +176,8 @@ class Diary():
                 """, re.MULTILINE | re.VERBOSE | re.DOTALL)
 
         reHeaderNext = re.compile(
-                r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
-                re.MULTILINE)
+            r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
+            re.MULTILINE)
 
         header = reHeader.search(diaryData)
         nextHeader = reHeaderNext.search(diaryData, header.end())

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-""" markdown-diary
+"""This module contains the main markdown-diary app code.
 
-TODO: Write description
+Markdown diary is a simple note taking app build on PyQt5. Its diaries are
+stored as plain text markdown files. The app has support for several
+features not included in plain markdown, such as tables, mathjax math rendering and
+syntax highlighting.
 """
-
 import os
 import sys
 import tempfile
@@ -23,22 +25,20 @@ import diary
 
 
 class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
-    """Modified QTextEdit that highlights all search matches
-    """
+    """Modified QTextEdit that highlights all search matches."""
 
     def __init__(self, parent=None):
-
+        """A very simple init that calls the superclass' init."""
         super(MyQTextEdit, self).__init__(parent)
 
     def highlightSearch(self, pattern):
-        """Highlight all search occurences
+        """Highlight all search occurences.
 
         The search is case insensitive.
 
         Args:
             pattern (str): The text to be highlighted
         """
-
         self.moveCursor(QtGui.QTextCursor.Start)
         color = QtGui.QColor("yellow")
 
@@ -57,11 +57,10 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
 
 
 class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
-    """Diary application class inheriting from QMainWindow
-    """
+    """Diary application class inheriting from QMainWindow."""
 
     def __init__(self, parent=None):
-
+        """A simple init that initializes member variables and GUI."""
         self.maxRecentItems = 10
 
         self.markdownAction = None
@@ -80,6 +79,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteId = None
         self.recentDiaries = None
         self.recentNotes = None
+
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
@@ -105,7 +105,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.searchLineAction.setDisabled(True)
 
     def closeEvent(self, event):
-        """Check if there are unsaved changes and display dialog if there are
+        """Check if there are unsaved changes and display dialog if there are.
 
         This redefines the basic close event to give the user a chance to save
         his work. It also saves the current settings.
@@ -113,7 +113,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Args:
             event (QEvent):
         """
-
         if self.text.document().isModified():
             discardMsg = ("You have unsaved changes. "
                           "Do you want to discard them?")
@@ -129,7 +128,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def initUI(self):
         """Initialize the UI - create widgets, set their pars, etc."""
-
         self.window = QtWidgets.QWidget(self)
         self.splitter = QtWidgets.QSplitter()
         self.initToolbar()
@@ -171,7 +169,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def initToolbar(self):
         """Initialize toolbar - create QActions and bind to functions, etc."""
-
         self.markdownAction = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("down"), "Toggle Markdown", self)
         self.markdownAction.setShortcut("Ctrl+M")
@@ -232,7 +229,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def initMenu(self):
         """Create the main application menu - File, etc."""
-
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openDiaryAction)
         self.fileMenu.addSeparator()
@@ -250,12 +246,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteMenu.addAction(self.deleteNoteAction)
 
     def loadTree(self, metadata):
-        """Load notes tree from diary metadata
+        """Load notes tree from diary metadata.
 
-         Load notes tree from diary metadata and populate the QTreeWidget
-         with it.
+        Load notes tree from diary metadata and populate the QTreeWidget
+        with it.
         """
-
         entries = []
 
         for note in metadata:
@@ -266,11 +261,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.tree.addTopLevelItems(entries)
 
     def loadSettings(self):
-        """Load settings via self.settings QSettings object"""
-
+        """Load settings via self.settings QSettings object."""
         self.recentDiaries = self.settings.value("diary/recent_diaries", [])
-        self.recentNotes = self.settings.value("diary/recent_notes", [])
         self.updateRecentDiaries()
+        self.recentNotes = self.settings.value("diary/recent_notes", [])
 
         self.resize(self.settings.value(
             "window/size", QtCore.QSize(600, 400)))
@@ -292,8 +286,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js")
 
     def writeSettings(self):
-        """Save settings via self.settings QSettings object"""
-
+        """Save settings via self.settings QSettings object."""
         self.settings.setValue("window/size", self.size())
         self.settings.setValue("window/position", self.pos())
         self.settings.setValue("window/splitter", self.splitter.sizes())
@@ -306,9 +299,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if len(self.recentNotes):
             self.settings.setValue("diary/recent_notes", self.recentNotes)
 
-    def markdownToggle(self):
-        """Switch between displaying Markdown source and rendered HTML"""
 
+    def markdownToggle(self):
+        """Switch between displaying Markdown source and rendered HTML."""
         if self.stack.currentIndex() == 1:
             self.stack.setCurrentIndex(0)
         else:
@@ -316,7 +309,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
     def createHTML(self, markdownText):
-        """Create full, valid HTML from Markdown source
+        """Create full, valid HTML from Markdown source.
 
         Args:
             markdownText (str): Markdown source to convert to HTML
@@ -324,7 +317,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Returns:
             Full HTML page text.
         """
-
         html = style.header
 
         # We load MathJax only when there is a good chance there is
@@ -349,8 +341,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         return html
 
     def displayHTMLRenderedMarkdown(self, markdownText):
-        """Display HTML rendered Markdown"""
-
+        """Display HTML rendered Markdown."""
         html = self.createHTML(markdownText)
 
         # Without a real file, intra-note tag links (#header1) won't work
@@ -369,11 +360,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.search()
 
     def newNote(self):
-        """Create an empty note and add it to the QTreeWidget
+        """Create an empty note and add it to the QTreeWidget.
 
         The note is not added to the diary until it is saved.
         """
-
         self.noteDate = datetime.date.today().isoformat()
         self.noteId = str(uuid.uuid1())
 
@@ -396,11 +386,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.setTextCursor(cursor)
 
     def saveNote(self):
-        """Save the displayed note
+        """Save the displayed note.
 
         Either updates an existing note or adds a new one to a diary.
         """
-
         if self.text.toPlainText().lstrip() == "":
             QtWidgets.QMessageBox.information(
                 self, 'Message', "You can't save an empty note!")
@@ -423,7 +412,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
-        """Delete a specified note
+        """Delete a specified note.
 
          If there are unsaved changes, prompt the user. Refresh note tree
          after deletion.
@@ -431,7 +420,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Args:
             noteId (str, optional): UUID of the note to delete
         """
-
         deleteMsg = "Do you really want to delete the note?"
         reply = QtWidgets.QMessageBox.question(
             self, 'Message', deleteMsg,
@@ -450,12 +438,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
 
     def openDiary(self):
-        """Display a file open dialog and load the selected diary
+        """Display a file open dialog and load the selected diary.
 
-         Enable relevant toolbar items (new note, save note, etc.), in case
-         no diary was open before and they were disabled.
+        Enable relevant toolbar items (new note, save note, etc.), in case
+        no diary was open before and they were disabled.
         """
-
         fname = QtWidgets.QFileDialog.getOpenFileName(
             caption="Open Diary",
             filter="Markdown Files (*.md);;All Files (*)")[0]
@@ -474,7 +461,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 print("ERROR:" + fname + "is not a valid diary file!")
 
     def isValidDiary(self, fname):
-        """Check if a file path leads to a valid diary
+        """Check if a file path leads to a valid diary.
 
         Args:
             fname (str): Path to a diary file to be validated.
@@ -482,19 +469,17 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Returns:
             bool: True for valid, False for invalid diary.
         """
-
         # TODO Implement checks
         return True
 
     def loadDiary(self, fname):
-        """Load diary from file
+        """Load diary from file.
 
         Display last note from the diary.
 
         Args:
             fname (str): Path to a file containing a diary.
         """
-
         self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
         self.loadTree(self.diary.metadata)
@@ -512,7 +497,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.stack.setCurrentIndex(1)
 
     def updateRecentDiaries(self, fname=""):
-        """Update list of recently opened diaries
+        """Update list of recently opened diaries.
 
          When fname is specified, adds/moves the specified diary to the
          beggining of a list. Otherwise just populates the list in the file
@@ -522,7 +507,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
              fname (str, optional): The most recent diary to be added/moved
                 to the top of the list.
         """
-
         if fname != "":
             if fname in self.recentDiaries:
                 self.recentDiaries.remove(fname)
@@ -546,7 +530,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 lambda: self.loadDiary(recent))
 
     def updateRecentNotes(self, noteId):
-        """Update list of recently viewed notes
+        """Update list of recently viewed notes.
 
         Adds/moves the specified noteId to the beggining of the list.
 
@@ -554,7 +538,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             noteId (str): The most recent note to be added/moved to the top
                 of the list.
         """
-
         if noteId in self.recentNotes:
             self.recentNotes.remove(noteId)
 
@@ -563,13 +546,13 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if len(self.recentNotes) > self.maxRecentItems:
             del self.recentNotes[:-self.maxRecentItems]
 
+
     def itemSelectionChanged(self):
-        """Display a new selected note
+        """Display a new selected note.
 
-         Prompts the user if there is unsaved work. If there is an active
-         search, reruns it on the new note.
+        Prompts the user if there is unsaved work. If there is an active
+        search, reruns it on the new note.
         """
-
         if len(self.tree.selectedItems()) == 0:
             return
 
@@ -613,8 +596,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.search()
 
     def displayNote(self, noteId):
-        """Display a specified note"""
-
+        """Display a specified note."""
         self.text.setText(self.diary.getNote(self.diary.data, noteId))
         self.setTitle()
         self.noteId = noteId
@@ -624,13 +606,12 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
     def search(self):
-        """Search and highlight text in all notes
+        """Search and highlight text in all notes.
 
-         Highlights text occurrences in the editor and web view. Searches all
-         notes for the text and removes non-matching from the note tree. The
-         text to search for is taken from the searchLine widget.
+        Highlights text occurrences in the editor and web view. Searches all
+        notes for the text and removes non-matching from the note tree. The
+        text to search for is taken from the searchLine widget.
         """
-
         # Search in the editor
         self.text.highlightSearch(self.searchLine.text())
 
@@ -645,8 +626,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.loadTree(entries)
 
     def searchNext(self):
-        """Move main highlight (and scroll) to the next search match"""
-
+        """Move main highlight (and scroll) to the next search match."""
         self.web.findText(self.searchLine.text(),
                           QWebEnginePage.FindWrapsAroundDocument)
 
@@ -656,15 +636,14 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 self.text.find(self.searchLine.text())
 
     def setTitle(self):
-        """Set the application title; add '*' if editor in dirty state"""
-
+        """Set the application title; add '*' if editor in dirty state."""
         if self.text.document().isModified():
             self.setWindowTitle("*Markdown Diary")
         else:
             self.setWindowTitle("Markdown Diary")
 
     def __del__(self):
-
+        """Clean up temporary files on exit."""
         # Delete temporary files
         # We put it into __del__ deliberately, so if one wants, one can avoid
         # the temporary files being deleted by killing the process. This might
@@ -674,8 +653,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
 
 def main():
-    """Run the whole QApplication"""
-
+    """Run the whole QApplication."""
     app = QtWidgets.QApplication(sys.argv)
     # pyqtRemoveInputHook() # enable for debugging
 
