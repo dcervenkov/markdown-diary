@@ -270,7 +270,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.recentDiaries = self.settings.value("diary/recent_diaries", [])
         self.recentNotes = self.settings.value("diary/recent_notes", [])
-        self.updateRecent()
+        self.updateRecentDiaries()
 
         self.resize(self.settings.value(
             "window/size", QtCore.QSize(600, 400)))
@@ -495,7 +495,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             fname (str): Path to a file containing a diary.
         """
 
-        self.updateRecent(fname)
+        self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
         self.loadTree(self.diary.metadata)
 
@@ -511,7 +511,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
         self.stack.setCurrentIndex(1)
 
-    def updateRecent(self, fname=""):
+    def updateRecentDiaries(self, fname=""):
         """Update list of recently opened diaries
 
          When fname is specified, adds/moves the specified diary to the
