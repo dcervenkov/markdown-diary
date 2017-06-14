@@ -23,6 +23,12 @@ import markdown_math
 import style
 import diary
 
+class DummyItemDelegate(QtWidgets.QItemDelegate):  # pylint: disable=too-few-public-methods
+    """A class used to disable editing for selected columns of QtTreeWidget."""
+
+    def createEditor(self, parent, option, index):
+        """This is the method that must do nothing to disable editing."""
+        pass
 
 class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
     """Modified QTextEdit that highlights all search matches."""
@@ -157,7 +163,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.tree.setSortingEnabled(True)
         self.tree.sortByColumn(1, QtCore.Qt.DescendingOrder)
         self.tree.itemSelectionChanged.connect(self.itemSelectionChanged)
-        self.tree.itemDoubleClicked.connect(self.markdownToggle)
+        self.tree.itemChanged.connect(self.itemChanged)
+        self.tree.itemDoubleClicked.connect(self.itemDoubleClicked)
+        # Disable editing for the 'title' column
+        self.tree.setItemDelegateForColumn(2, DummyItemDelegate())
 
         self.splitter.addWidget(self.stack)
         self.splitter.addWidget(self.tree)
@@ -256,6 +265,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         for note in metadata:
             entries.append(QtWidgets.QTreeWidgetItem(
                 [note["note_id"], note["date"], note["title"]]))
+
+        for entry in entries:
+            entry.setFlags(entry.flags() | QtCore.Qt.ItemIsEditable)
 
         self.tree.clear()
         self.tree.addTopLevelItems(entries)
@@ -403,13 +415,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.setTitle()
 
         self.loadTree(self.diary.metadata)
-
-        # TODO This block is here to disallow reloading of self.text
-        # which moves the cursor up. Make it more elegant than this!
-        self.tree.blockSignals(True)
-        self.tree.setCurrentItem(
-            self.tree.findItems(self.noteId, QtCore.Qt.MatchExactly)[0])
-        self.tree.blockSignals(False)
+        self.selectItemWithoutReload(self.noteId)
 
     def deleteNote(self, noteId=None):
         """Delete a specified note.
@@ -641,6 +647,39 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.setWindowTitle("*Markdown Diary")
         else:
             self.setWindowTitle("Markdown Diary")
+
+    def itemDoubleClicked(self, dummy, column):
+        """Decide action based on which column the user clicked.
+
+         If the user clicked the title, toggle Markdown.
+        """
+        if column == 2:
+            self.markdownToggle()
+
+    def itemChanged(self, item, dummy):
+        """Update note when some of its metadata are changed in the TreeWidget.
+
+         Currently only the date can be changed. The date is first validated,
+         otherwise no action is taken.
+        """
+        noteId = item.text(0)
+        noteDate = item.text(1)
+        if self.diary.isValidDate(noteDate):
+            self.diary.changeNoteDate(noteId, noteDate)
+            self.noteDate = noteDate
+            self.loadTree(self.diary.metadata)
+            self.selectItemWithoutReload(noteId)
+        else:
+            print("Invalid date")
+            self.loadTree(self.diary.metadata)
+            self.selectItemWithoutReload(noteId)
+
+    def selectItemWithoutReload(self, noteId):
+        """Select an item in the QtTreeWidget without reloading the note."""
+        self.tree.blockSignals(True)
+        self.tree.setCurrentItem(
+            self.tree.findItems(noteId, QtCore.Qt.MatchExactly)[0])
+        self.tree.blockSignals(False)
 
     def __del__(self):
         """Clean up temporary files on exit."""

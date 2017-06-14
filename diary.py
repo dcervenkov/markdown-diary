@@ -201,3 +201,17 @@ class Diary():
                 matching.append(metadatum)
 
         return matching
+
+    def changeNoteDate(self, noteId, newDate):
+        """Change date of a note."""
+        self.saveNote(self.getNote(self.data, noteId), noteId, newDate)
+
+    def isValidDate(self, date):
+        """Check whether a date is of a valid format."""
+        try:
+            datetime.datetime.strptime(date, '%Y-%m-%d')
+            if len(date) != 10:
+                return False
+            return True
+        except ValueError:
+            return False
