@@ -664,9 +664,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.highlightSearch(self.searchLine.text())
 
         # Search in the WebView
-        self.web.findText("", QWebEnginePage.HighlightAllOccurrences)
-        self.web.findText(self.searchLine.text(),
-                          QWebEnginePage.HighlightAllOccurrences)
         self.web.findText(self.searchLine.text())
 
         # Search for matching notes
@@ -675,8 +672,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def searchNext(self):
         """Move main highlight (and scroll) to the next search match."""
-        self.web.findText(self.searchLine.text(),
-                          QWebEnginePage.FindWrapsAroundDocument)
+        self.web.findText(self.searchLine.text())
 
         if self.text.extraSelections():
             if not self.text.find(self.searchLine.text()):
