@@ -311,10 +311,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.settings.setValue("window/toolbar_area", self.toolBarArea(
             self.toolbar))
 
-        if len(self.recentDiaries):
+        if self.recentDiaries:
             self.settings.setValue("diary/recent_diaries", self.recentDiaries)
 
-        if len(self.recentNotes):
+        if self.recentNotes:
             self.settings.setValue("diary/recent_notes", self.recentNotes)
 
 
@@ -582,7 +582,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if len(self.recentNotes) > self.maxRecentItems:
             del self.recentNotes[:-self.maxRecentItems]
 
-    def promptToSaveOrDiscard(self):
+    @staticmethod
+    def promptToSaveOrDiscard():
         """Display a message box asking whether to save or discard changes.
 
         Returns:
@@ -692,7 +693,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if hasattr(self, 'diary'):
             self.setWindowTitle(self.windowTitle() + " - " + os.path.basename(self.diary.fname))
 
-    def itemDoubleClicked(self, dummy, column):
+    def itemDoubleClicked(self, _, column):
         """Decide action based on which column the user clicked.
 
          If the user clicked the title, toggle Markdown.
@@ -700,7 +701,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if column == 2:
             self.markdownToggle()
 
-    def itemChanged(self, item, dummy):
+    def itemChanged(self, item, _):
         """Update note when some of its metadata are changed in the TreeWidget.
 
          Currently only the date can be changed. The date is first validated,
