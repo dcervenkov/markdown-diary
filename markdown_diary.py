@@ -101,7 +101,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             "markdown-diary", application="settings")
         self.loadSettings()
 
-        if len(self.recentDiaries):
+        if self.recentDiaries and os.path.isfile(self.recentDiaries[0]):
             self.loadDiary(self.recentDiaries[0])
         else:
             self.text.setDisabled(True)
@@ -121,15 +121,14 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             event (QEvent):
         """
         if self.text.document().isModified():
-            discardMsg = ("You have unsaved changes. "
-                          "Do you want to discard them?")
-            reply = QtWidgets.QMessageBox.question(
-                self, 'Message', discardMsg,
-                QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+            reply = self.promptToSaveOrDiscard()
 
-            if reply == QtWidgets.QMessageBox.No:
+            if reply == QtWidgets.QMessageBox.Cancel:
                 event.ignore()
                 return
+
+            elif reply == QtWidgets.QMessageBox.Save:
+                self.saveNote()
 
         self.writeSettings()
 
@@ -505,19 +504,26 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def loadDiary(self, fname):
         """Load diary from file.
 
-        Display last note from the diary.
+        Display last note from the diary if it exists.
 
         Args:
             fname (str): Path to a file containing a diary.
         """
         self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
+
         self.loadTree(self.diary.metadata)
+
+        # Display empty editor if the diary has no notes (e.g., new diary)
+        if not self.diary.metadata:
+            self.text.clear()
+            self.stack.setCurrentIndex(0)
+            return
 
         # Check if we saved a recent noteId for this diary and open it if we
         # did, otherwise open the newest note
-        if (len(self.recentNotes) and any(self.recentNotes[0] in metaDict["note_id"]
-                                          for metaDict in self.diary.metadata)):
+        if (self.recentNotes and any(self.recentNotes[0] in metaDict["note_id"]
+                                     for metaDict in self.diary.metadata)):
             lastNoteId = self.recentNotes[0]
         else:
             lastNoteId = self.diary.metadata[-1]["note_id"]
@@ -557,7 +563,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             # disconnect them
             self.recentDiariesActions[i].triggered.disconnect()
             self.recentDiariesActions[i].triggered.connect(
-                lambda: self.loadDiary(recent))
+                lambda dummy=False, recent=recent: self.loadDiary(recent))
 
     def updateRecentNotes(self, noteId):
         """Update list of recently viewed notes.
@@ -576,6 +582,25 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if len(self.recentNotes) > self.maxRecentItems:
             del self.recentNotes[:-self.maxRecentItems]
 
+    def promptToSaveOrDiscard(self):
+        """Display a message box asking whether to save or discard changes.
+
+        Returns:
+            One of the three options:
+                QtWidgets.QMessageBox.Save
+                QtWidgets.QMessageBox.Discard
+                QtWidgets.QMessageBox.Cancel
+        """
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setWindowTitle("Save or Discard")
+        msgBox.setIcon(QtWidgets.QMessageBox.Question)
+        msgBox.setText("Save changes before closing note?")
+        msgBox.setStandardButtons(
+            QtWidgets.QMessageBox.Save |
+            QtWidgets.QMessageBox.Discard |
+            QtWidgets.QMessageBox.Cancel)
+        msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
+        return msgBox.exec()
 
     def itemSelectionChanged(self):
         """Display a new selected note.
@@ -583,7 +608,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Prompts the user if there is unsaved work. If there is an active
         search, reruns it on the new note.
         """
-        if len(self.tree.selectedItems()) == 0:
+        if len(self.tree.selectedItems()) == 0:  # pylint: disable=len-as-condition
             return
 
         newNoteId = self.tree.selectedItems()[0].text(0)
@@ -596,15 +621,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 self.noteId, QtCore.Qt.MatchExactly)[0])
             self.tree.blockSignals(False)
 
-            msgBox = QtWidgets.QMessageBox()
-            msgBox.setIcon(QtWidgets.QMessageBox.Question)
-            msgBox.setText("Save changes before closing note?")
-            msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Save |
-                QtWidgets.QMessageBox.Discard |
-                QtWidgets.QMessageBox.Cancel)
-            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
-            reply = msgBox.exec()
+            reply = self.promptToSaveOrDiscard()
 
             # We just save note/flag it as unmodified and recursively call
             # this method again
@@ -660,7 +677,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.web.findText(self.searchLine.text(),
                           QWebEnginePage.FindWrapsAroundDocument)
 
-        if len(self.text.extraSelections()):
+        if self.text.extraSelections():
             if not self.text.find(self.searchLine.text()):
                 self.text.moveCursor(QtGui.QTextCursor.Start)
                 self.text.find(self.searchLine.text())
