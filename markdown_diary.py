@@ -73,6 +73,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.newNoteAction = None
         self.saveNoteAction = None
         self.deleteNoteAction = None
+        self.newDiaryAction = None
         self.openDiaryAction = None
         self.searchLineAction = None
         self.recentDiariesActions = None
@@ -196,6 +197,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.saveNoteAction.setStatusTip("Save note")
         self.saveNoteAction.triggered.connect(self.saveNote)
 
+        self.newDiaryAction = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("folder-new"), "New diary", self)
+        self.newDiaryAction.setStatusTip("New diary")
+        self.newDiaryAction.triggered.connect(self.newDiary)
+
         self.openDiaryAction = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("document-open"), "Open diary", self)
         self.openDiaryAction.setShortcut("Ctrl+O")
@@ -239,6 +245,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def initMenu(self):
         """Create the main application menu - File, etc."""
         self.fileMenu = self.menuBar().addMenu("&File")
+        self.fileMenu.addAction(self.newDiaryAction)
         self.fileMenu.addAction(self.openDiaryAction)
         self.fileMenu.addSeparator()
 
@@ -442,6 +449,23 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.loadTree(self.diary.metadata)
         self.tree.setCurrentItem(
             self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
+
+    def newDiary(self):
+        """Display a file save dialog and create diary at specified path.
+
+        Enable relevant toolbar items (new note, save note, etc.), in case
+        no diary was open before and they were disabled.
+        """
+        fname = QtWidgets.QFileDialog.getSaveFileName(
+            caption="Create a New Diary",
+            filter="Markdown Files (*.md);;All Files (*)")[0]
+
+        if fname:
+            with open(fname, 'w'):
+                os.utime(fname)
+
+            self.loadDiary(fname)
+            self.newNote()
 
     def openDiary(self):
         """Display a file open dialog and load the selected diary.
@@ -647,6 +671,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.setWindowTitle("*Markdown Diary")
         else:
             self.setWindowTitle("Markdown Diary")
+
+        if hasattr(self, 'diary'):
+            self.setWindowTitle(self.windowTitle() + " - " + os.path.basename(self.diary.fname))
 
     def itemDoubleClicked(self, dummy, column):
         """Decide action based on which column the user clicked.
