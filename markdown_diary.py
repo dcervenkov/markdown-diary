@@ -15,7 +15,7 @@ import datetime
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtWebEngineWidgets import QWebEnginePage, QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 # from PyQt5.QtCore import pyqtRemoveInputHook # enable for debugging
 
 from markdownhighlighter import MarkdownHighlighter
