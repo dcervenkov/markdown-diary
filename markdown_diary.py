@@ -27,15 +27,11 @@ class DummyItemDelegate(QtWidgets.QItemDelegate):  # pylint: disable=too-few-pub
     """A class used to disable editing for selected columns of QtTreeWidget."""
 
     def createEditor(self, parent, option, index):
-        """This is the method that must do nothing to disable editing."""
+        """Do nothing to disable editing."""
         pass
 
 class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
     """Modified QTextEdit that highlights all search matches."""
-
-    def __init__(self, parent=None):
-        """A very simple init that calls the superclass' init."""
-        super(MyQTextEdit, self).__init__(parent)
 
     def highlightSearch(self, pattern):
         """Highlight all search occurences.
@@ -66,7 +62,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     """Diary application class inheriting from QMainWindow."""
 
     def __init__(self, parent=None):
-        """A simple init that initializes member variables and GUI."""
+        """Initialize member variables and GUI."""
         self.maxRecentItems = 10
 
         self.markdownAction = None
@@ -325,6 +321,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         else:
             self.stack.setCurrentIndex(1)
             self.displayHTMLRenderedMarkdown(self.text.toPlainText())
+            if self.searchLine.text() != "":
+                # Search in the WebView
+                self.web.findText(self.searchLine.text())
 
     def createHTML(self, markdownText):
         """Create full, valid HTML from Markdown source.
@@ -334,6 +333,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         Returns:
             Full HTML page text.
+
         """
         html = style.header
 
@@ -375,7 +375,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
 
         if self.searchLine.text() != "":
-            self.search()
+            # Search in the WebView
+            self.web.findText(self.searchLine.text())
 
     def newNote(self):
         """Create an empty note and add it to the QTreeWidget.
@@ -497,6 +498,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         Returns:
             bool: True for valid, False for invalid diary.
+
         """
         # TODO Implement checks
         return True
@@ -591,6 +593,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 QtWidgets.QMessageBox.Save
                 QtWidgets.QMessageBox.Discard
                 QtWidgets.QMessageBox.Cancel
+
         """
         msgBox = QtWidgets.QMessageBox()
         msgBox.setWindowTitle("Save or Discard")
@@ -641,7 +644,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.displayNote(newNoteId)
 
         if self.searchLine.text() != "":
-            self.search()
+            # Search in the editor
+            self.text.highlightSearch(self.searchLine.text())
+
+            # Search in the WebView
+            self.web.findText(self.searchLine.text())
 
     def displayNote(self, noteId):
         """Display a specified note."""
@@ -692,7 +699,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def itemDoubleClicked(self, _, column):
         """Decide action based on which column the user clicked.
 
-         If the user clicked the title, toggle Markdown.
+        If the user clicked the title, toggle Markdown.
         """
         if column == 2:
             self.markdownToggle()
@@ -700,8 +707,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def itemChanged(self, item, _):
         """Update note when some of its metadata are changed in the TreeWidget.
 
-         Currently only the date can be changed. The date is first validated,
-         otherwise no action is taken.
+        Currently only the date can be changed. The date is first validated,
+        otherwise no action is taken.
         """
         noteId = item.text(0)
         noteDate = item.text(1)
