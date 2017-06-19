@@ -194,10 +194,18 @@ class Diary():
                 return metaDict
 
     def searchNotes(self, pattern):
+        """Search for all notes containing 'pattern'.
 
+        Args:
+            pattern (string): Text to look for.
+
+        Returns:
+            A list of metadata of all matching notes.
+        """
         matching = []
+        rePattern = re.compile(re.escape(pattern), re.IGNORECASE)
         for metadatum in self.metadata:
-            if pattern in self.getNote(self.data, metadatum["note_id"]):
+            if rePattern.search(self.getNote(self.data, metadatum["note_id"])):
                 matching.append(metadatum)
 
         return matching
