@@ -341,11 +341,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         """Create full, valid HTML from Markdown source.
 
         Args:
-            markdownText (str): Markdown source to convert to HTML
+            markdownText (str): Markdown source to convert to HTML.
 
         Returns:
             Full HTML page text.
-
         """
         html = style.header
 
@@ -708,7 +707,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if hasattr(self, 'diary'):
             self.setWindowTitle(self.windowTitle() + " - " + os.path.basename(self.diary.fname))
 
-    def itemDoubleClicked(self, _, column):
+    def itemDoubleClicked(self, _item, column):
         """Decide action based on which column the user clicked.
 
         If the user clicked the title, toggle Markdown.
@@ -716,7 +715,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if column == 2:
             self.markdownToggle()
 
-    def itemChanged(self, item, _):
+    def itemChanged(self, item, _column):
         """Update note when some of its metadata are changed in the TreeWidget.
 
         Currently only the date can be changed. The date is first validated,
