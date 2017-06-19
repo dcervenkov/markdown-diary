@@ -24,11 +24,22 @@ import style
 import diary
 
 class DummyItemDelegate(QtWidgets.QItemDelegate):  # pylint: disable=too-few-public-methods
-    """A class used to disable editing for selected columns of QtTreeWidget."""
+    """A class used to modify behavior and appearance of the QtTreeWidget.
+
+    This class is used to disable editing for specific columns as well as
+    increase row height.
+    """
 
     def createEditor(self, parent, option, index):
         """Do nothing to disable editing."""
         pass
+
+    def sizeHint(self, _option, _index):
+        """Increase row size.
+
+        This is used in the QTreeWidget.
+        """
+        return QtCore.QSize(1, 20)
 
 class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
     """Modified QTextEdit that highlights all search matches."""
@@ -153,6 +164,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.stack.addWidget(self.web)
 
         self.tree = QtWidgets.QTreeWidget()
+        self.tree.setUniformRowHeights(True)
         self.tree.setColumnCount(3)
         self.tree.setHeaderLabels(["Id", "Date", "Title"])
         self.tree.setColumnHidden(0, True)
