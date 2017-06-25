@@ -2,8 +2,8 @@
 """This module contains the main markdown-diary app code.
 
 Markdown diary is a simple note taking app build on PyQt5. Its diaries are
-stored as plain text markdown files. The app has support for several
-features not included in plain markdown, such as tables, mathjax math rendering and
+stored as plain text markdown files. The app has support for several features
+not included in plain markdown, such as tables, mathjax math rendering and
 syntax highlighting.
 """
 import os
@@ -23,6 +23,7 @@ import markdown_math
 import style
 import diary
 
+
 class DummyItemDelegate(QtWidgets.QItemDelegate):  # pylint: disable=too-few-public-methods
     """A class used to modify behavior and appearance of the QtTreeWidget.
 
@@ -34,12 +35,13 @@ class DummyItemDelegate(QtWidgets.QItemDelegate):  # pylint: disable=too-few-pub
         """Do nothing to disable editing."""
         pass
 
-    def sizeHint(self, _option, _index):
+    def sizeHint(self, _option, _index):  # pylint: disable=no-self-use
         """Increase row size.
 
         This is used in the QTreeWidget.
         """
         return QtCore.QSize(1, 20)
+
 
 class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-methods
     """Modified QTextEdit that highlights all search matches."""
@@ -68,6 +70,31 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
         self.moveCursor(QtGui.QTextCursor.Start)
         self.find(pattern)
 
+    def insertFromMimeData(self, source):
+        """Insert supported formats in a specific way (i.e., Markdown-like)"""
+        if source.hasUrls():
+            for url in source.urls():
+                path = url.path()
+                if self.isWebImage(path):
+                    fileName = os.path.basename(path)
+                    commonPath = os.path.commonpath([path,
+                        self.parent().parent().parent().parent().diary.fname])
+                    relPath = os.path.relpath(path, start=commonPath)
+                    imgMarkdown = '![{0}]({0} "{1}")'.format(relPath, fileName)
+                    self.insertPlainText(imgMarkdown)
+                else:
+                    super(MyQTextEdit, self).insertFromMimeData(source)
+        else:
+            super(MyQTextEdit, self).insertFromMimeData(source)
+
+    @staticmethod
+    def isWebImage(path):
+        """Check if path leads to an image that can by displayed by browser."""
+        if path.lower().endswith(('.gif', '.png', '.jpg', '.jpeg')):
+            return True
+
+        return False
+
 
 class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
     """Diary application class inheriting from QMainWindow."""
@@ -93,7 +120,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteId = None
         self.recentDiaries = None
         self.recentNotes = None
-
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
@@ -299,7 +325,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             "window/position", QtCore.QPoint(200, 200)))
 
         self.splitter.setSizes(
-            [int(val) for val in self.settings.value("window/splitter", [70, 30])])
+            [int(val) for val in self.settings.value(
+                "window/splitter", [70, 30])])
 
         toolBarArea = int(self.settings.value("window/toolbar_area",
                                               QtCore.Qt.TopToolBarArea))
@@ -324,7 +351,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         if self.recentNotes:
             self.settings.setValue("diary/recent_notes", self.recentNotes)
-
 
     def markdownToggle(self):
         """Switch between displaying Markdown source and rendered HTML."""
@@ -380,9 +406,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             tmpf.write(html)
             self.tempFiles.append(tmpf)
 
-        # QWebEngineView resolves relative links (like # tags) with respect to
-        # the baseUrl
-        mainPath = os.path.realpath(__file__)
+        # QWebEngineView resolves relative links (like images and stylesheets)
+        # with respect to the baseUrl
+        mainPath = self.diary.fname
         self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
 
         if self.searchLine.text() != "":
@@ -705,7 +731,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.setWindowTitle("Markdown Diary")
 
         if hasattr(self, 'diary'):
-            self.setWindowTitle(self.windowTitle() + " - " + os.path.basename(self.diary.fname))
+            self.setWindowTitle(self.windowTitle() + " - " +
+                                os.path.basename(self.diary.fname))
 
     def itemDoubleClicked(self, _item, column):
         """Decide action based on which column the user clicked.

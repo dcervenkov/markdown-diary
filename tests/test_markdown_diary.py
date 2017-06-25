@@ -158,6 +158,17 @@ class DiaryAppTest(unittest.TestCase):
 
         noteHtml = self.diary_app.createHTML(note)
 
+        # CSS path is machine-dependent so we change it
+        newNoteHtml = ""
+        for line in noteHtml.splitlines():
+            if 'github-markdown.css' in line:
+                line = '<link rel="stylesheet" href="css/github-markdown.css">'
+            if 'github-pygments.css' in line:
+                line = '<link rel="stylesheet" href="css/github-pygments.css">'
+            newNoteHtml += line
+            newNoteHtml += '\n'
+        noteHtml = newNoteHtml
+
         self.assertMultiLineEqual(noteHtml, refNoteHtml)
 
     def test_displaying_of_HTML_rendered_Markdown(self):
@@ -174,6 +185,19 @@ class DiaryAppTest(unittest.TestCase):
         self.diary_app.web.loadFinished.connect(self._loadFinished)
         self.noteHtml = None
         app.exec_()
+
+        # CSS path is machine-dependent so we change it
+        newNoteHtml = ""
+        for line in self.noteHtml.splitlines():
+            if 'github-markdown.css' in line:
+                line = '<link rel="stylesheet" href="css/github-markdown.css">'
+            if 'github-pygments.css' in line:
+                line = '<link rel="stylesheet" href="css/github-pygments.css">'
+            newNoteHtml += line
+            newNoteHtml += '\n'
+        # Remove the added extra newline
+        self.noteHtml = newNoteHtml[:-1]
+
         self.assertMultiLineEqual(self.noteHtml, refNoteHtml)
 
     def _loadFinished(self, result):

@@ -1,9 +1,13 @@
+import os
+
+appPath = os.path.dirname(os.path.realpath(__file__))
+
 header = ('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n'
           '"http://www.w3.org/TR/html4/strict.dtd">\n'
           '<head>\n'
           '<meta http-equiv="content-type" content="text/html; charset=utf-8">\n'
-          '<link rel="stylesheet" href="css/github-markdown.css">\n'
-          '<link rel="stylesheet" href="css/github-pygments.css">\n'
+          '<link rel="stylesheet" href="file://' + appPath + '/css/github-markdown.css">\n'
+          '<link rel="stylesheet" href="file://' + appPath + '/css/github-pygments.css">\n'
           '<style type="text/css">\n'
           '    .markdown-body {\n'
           '        box-sizing: border-box;\n'
