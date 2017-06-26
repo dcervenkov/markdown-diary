@@ -137,7 +137,15 @@ class DiaryAppTest(unittest.TestCase):
 
     def setUp(self):
 
+        # create a temporary diary to be used in tests
+        copyfile(diaryFileName, tempDiaryFileName)
+
         self.diary_app = markdown_diary.DiaryApp()
+
+    def tearDown(self):
+
+        # Delete the temporary diary
+        os.remove(tempDiaryFileName)
 
     def testLoadTree(self):
 
@@ -175,9 +183,8 @@ class DiaryAppTest(unittest.TestCase):
 
         self.maxDiff = None
 
-        copyfile(diaryFileName, tempDiaryFileName)
         self.diary_app.diary = d.Diary(tempDiaryFileName)
-        
+
         with open(noteFileName) as f:
             note = f.read()
 
