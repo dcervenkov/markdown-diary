@@ -120,6 +120,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteId = None
         self.recentDiaries = None
         self.recentNotes = None
+        self.diary = None
 
         QtWidgets.QMainWindow.__init__(self, parent)
 
@@ -398,13 +399,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
     def displayHTMLRenderedMarkdown(self, markdownText):
         """Display HTML rendered Markdown."""
         html = self.createHTML(markdownText)
-
-        # Without a real file, intra-note tag links (#header1) won't work
-        with tempfile.NamedTemporaryFile(
-                mode="w", prefix=".markdown-diary_", suffix=".tmp",
-                dir=tempfile.gettempdir(), delete=False) as tmpf:
-            tmpf.write(html)
-            self.tempFiles.append(tmpf)
 
         # QWebEngineView resolves relative links (like images and stylesheets)
         # with respect to the baseUrl
@@ -730,7 +724,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         else:
             self.setWindowTitle("Markdown Diary")
 
-        if hasattr(self, 'diary'):
+        if hasattr(self, 'diary') and self.diary != None:
             self.setWindowTitle(self.windowTitle() + " - " +
                                 os.path.basename(self.diary.fname))
 

@@ -174,6 +174,7 @@ class DiaryAppTest(unittest.TestCase):
     def test_displaying_of_HTML_rendered_Markdown(self):
 
         self.maxDiff = None
+        self.diary_app.diary.fname = diaryFileName
         with open(noteFileName) as f:
             note = f.read()
 
