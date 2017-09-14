@@ -107,6 +107,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.newNoteAction = None
         self.saveNoteAction = None
         self.deleteNoteAction = None
+        self.exportToHtmlAction = None
         self.newDiaryAction = None
         self.openDiaryAction = None
         self.searchLineAction = None
@@ -142,6 +143,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.saveNoteAction.setDisabled(True)
             self.newNoteAction.setDisabled(True)
             self.deleteNoteAction.setDisabled(True)
+            self.exportToHtmlAction.setDisabled(True)
             self.markdownAction.setDisabled(True)
             self.searchLineAction.setDisabled(True)
 
@@ -249,6 +251,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.deleteNoteAction.triggered.connect(
             lambda: self.deleteNote())  # pylint: disable=unnecessary-lambda
 
+        self.exportToHtmlAction = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("document-export"), "Export to HTML", self)
+        self.exportToHtmlAction.setStatusTip("New diary")
+        self.exportToHtmlAction.triggered.connect(self.exportToHtml)
+
         self.searchLine = QtWidgets.QLineEdit(self)
         self.searchLine.setFixedWidth(200)
         self.searchLine.setPlaceholderText("Search...")
@@ -271,6 +278,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.toolbar.addAction(self.newNoteAction)
         self.toolbar.addAction(self.saveNoteAction)
         self.toolbar.addAction(self.deleteNoteAction)
+        self.toolbar.addAction(self.exportToHtmlAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.openDiaryAction)
         self.toolbar.addSeparator()
@@ -294,6 +302,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteMenu.addAction(self.newNoteAction)
         self.noteMenu.addAction(self.saveNoteAction)
         self.noteMenu.addAction(self.deleteNoteAction)
+        self.noteMenu.addSeparator()
+        self.noteMenu.addAction(self.exportToHtmlAction)
 
     def loadTree(self, metadata):
         """Load notes tree from diary metadata.
@@ -516,6 +526,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 self.saveNoteAction.setDisabled(False)
                 self.newNoteAction.setDisabled(False)
                 self.deleteNoteAction.setDisabled(False)
+                self.exportToHtmlAction.setDisabled(False)
                 self.markdownAction.setDisabled(False)
                 self.searchLineAction.setDisabled(False)
             else:
@@ -760,6 +771,20 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.tree.setCurrentItem(
             self.tree.findItems(noteId, QtCore.Qt.MatchExactly)[0])
         self.tree.blockSignals(False)
+
+    def exportToHtml(self):
+        """Export the displayed note to HTML."""
+        markdownText = self.diary.getNote(self.diary.data, self.noteId)
+        html = self.createHTML(markdownText)
+
+        fname = QtWidgets.QFileDialog.getSaveFileName(
+            caption="Export Note to HTML",
+            filter="HTML Files (*.html);;All Files (*)")[0]
+
+        if fname:
+            with open(fname, 'w') as f:
+                os.utime(fname)
+                f.write(html)
 
     def __del__(self):
         """Clean up temporary files on exit."""
