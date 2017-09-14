@@ -624,7 +624,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.recentNotes.insert(0, noteId)
 
         if len(self.recentNotes) > self.maxRecentItems:
-            del self.recentNotes[:-self.maxRecentItems]
+            del self.recentNotes[self.maxRecentItems:]
 
     @staticmethod
     def promptToSaveOrDiscard():
