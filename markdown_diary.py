@@ -8,7 +8,6 @@ syntax highlighting.
 """
 import os
 import sys
-import tempfile
 import uuid
 import re
 import datetime
@@ -71,14 +70,14 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
         self.find(pattern)
 
     def insertFromMimeData(self, source):
-        """Insert supported formats in a specific way (i.e., Markdown-like)"""
+        """Insert supported formats in a specific way (i.e., Markdown-like)."""
         if source.hasUrls():
             for url in source.urls():
                 path = url.path()
                 if self.isWebImage(path):
                     fileName = os.path.basename(path)
                     commonPath = os.path.commonpath([path,
-                        self.parent().parent().parent().parent().diary.fname])
+                                                     self.parent().parent().parent().parent().diary.fname])
                     relPath = os.path.relpath(path, start=commonPath)
                     imgMarkdown = '![{0}]({0} "{1}")'.format(relPath, fileName)
                     self.insertPlainText(imgMarkdown)
@@ -107,7 +106,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.newNoteAction = None
         self.saveNoteAction = None
         self.deleteNoteAction = None
-        self.exportToHtmlAction = None
+        self.exportToHTMLAction = None
         self.newDiaryAction = None
         self.openDiaryAction = None
         self.searchLineAction = None
@@ -143,7 +142,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.saveNoteAction.setDisabled(True)
             self.newNoteAction.setDisabled(True)
             self.deleteNoteAction.setDisabled(True)
-            self.exportToHtmlAction.setDisabled(True)
+            self.exportToHTMLAction.setDisabled(True)
             self.markdownAction.setDisabled(True)
             self.searchLineAction.setDisabled(True)
 
@@ -251,10 +250,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.deleteNoteAction.triggered.connect(
             lambda: self.deleteNote())  # pylint: disable=unnecessary-lambda
 
-        self.exportToHtmlAction = QtWidgets.QAction(
+        self.exportToHTMLAction = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("document-export"), "Export to HTML", self)
-        self.exportToHtmlAction.setStatusTip("New diary")
-        self.exportToHtmlAction.triggered.connect(self.exportToHtml)
+        self.exportToHTMLAction.setStatusTip("Export to HTML")
+        self.exportToHTMLAction.triggered.connect(self.exportToHTML)
 
         self.searchLine = QtWidgets.QLineEdit(self)
         self.searchLine.setFixedWidth(200)
@@ -278,7 +277,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.toolbar.addAction(self.newNoteAction)
         self.toolbar.addAction(self.saveNoteAction)
         self.toolbar.addAction(self.deleteNoteAction)
-        self.toolbar.addAction(self.exportToHtmlAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.openDiaryAction)
         self.toolbar.addSeparator()
@@ -303,7 +301,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteMenu.addAction(self.saveNoteAction)
         self.noteMenu.addAction(self.deleteNoteAction)
         self.noteMenu.addSeparator()
-        self.noteMenu.addAction(self.exportToHtmlAction)
+        self.noteMenu.addAction(self.exportToHTMLAction)
 
     def loadTree(self, metadata):
         """Load notes tree from diary metadata.
@@ -382,6 +380,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         Returns:
             Full HTML page text.
+
         """
         html = style.header
 
@@ -526,7 +525,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 self.saveNoteAction.setDisabled(False)
                 self.newNoteAction.setDisabled(False)
                 self.deleteNoteAction.setDisabled(False)
-                self.exportToHtmlAction.setDisabled(False)
+                self.exportToHTMLAction.setDisabled(False)
                 self.markdownAction.setDisabled(False)
                 self.searchLineAction.setDisabled(False)
             else:
@@ -772,10 +771,28 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.tree.findItems(noteId, QtCore.Qt.MatchExactly)[0])
         self.tree.blockSignals(False)
 
-    def exportToHtml(self):
+    def exportToHTML(self):
         """Export the displayed note to HTML."""
         markdownText = self.diary.getNote(self.diary.data, self.noteId)
         html = self.createHTML(markdownText)
+
+        # To be able to load the CSS during normal operation correctly, we have
+        # to use an absolute path. This is not desirable when exporting to
+        # HTML, so we change it to a relative path.
+        newhtml = ""
+        stillInHead = True
+        for line in html.splitlines():
+            if stillInHead:
+                if "github-markdown.css" in line:
+                    newhtml += '<link rel="stylesheet" href="css/github-markdown.css">\n'
+                elif "github-pygments.css" in line:
+                    newhtml += '<link rel="stylesheet" href="css/github-pygments.css">\n'
+                else:
+                    newhtml += line + '\n'
+                    if "</head>" in line:
+                        stillInHead = False
+            else:
+                newhtml += line + '\n'
 
         fname = QtWidgets.QFileDialog.getSaveFileName(
             caption="Export Note to HTML",
@@ -784,7 +801,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if fname:
             with open(fname, 'w') as f:
                 os.utime(fname)
-                f.write(html)
+                f.write(newhtml)
 
     def __del__(self):
         """Clean up temporary files on exit."""
