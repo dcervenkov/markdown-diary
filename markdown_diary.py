@@ -107,6 +107,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.saveNoteAction = None
         self.deleteNoteAction = None
         self.exportToHTMLAction = None
+        self.exportToPDFAction = None
         self.newDiaryAction = None
         self.openDiaryAction = None
         self.searchLineAction = None
@@ -143,6 +144,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.newNoteAction.setDisabled(True)
             self.deleteNoteAction.setDisabled(True)
             self.exportToHTMLAction.setDisabled(True)
+            self.exportToPDFAction.setDisabled(True)
             self.markdownAction.setDisabled(True)
             self.searchLineAction.setDisabled(True)
 
@@ -255,6 +257,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.exportToHTMLAction.setStatusTip("Export to HTML")
         self.exportToHTMLAction.triggered.connect(self.exportToHTML)
 
+        self.exportToPDFAction = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("document-export"), "Export to PDF", self)
+        self.exportToPDFAction.setStatusTip("Export to PDF")
+        self.exportToPDFAction.triggered.connect(self.exportToPDF)
+
         self.searchLine = QtWidgets.QLineEdit(self)
         self.searchLine.setFixedWidth(200)
         self.searchLine.setPlaceholderText("Search...")
@@ -302,6 +309,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteMenu.addAction(self.deleteNoteAction)
         self.noteMenu.addSeparator()
         self.noteMenu.addAction(self.exportToHTMLAction)
+        self.noteMenu.addAction(self.exportToPDFAction)
 
     def loadTree(self, metadata):
         """Load notes tree from diary metadata.
@@ -526,6 +534,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
                 self.newNoteAction.setDisabled(False)
                 self.deleteNoteAction.setDisabled(False)
                 self.exportToHTMLAction.setDisabled(False)
+                self.exportToPDFAction.setDisabled(False)
                 self.markdownAction.setDisabled(False)
                 self.searchLineAction.setDisabled(False)
             else:
@@ -802,6 +811,17 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             with open(fname, 'w') as f:
                 os.utime(fname)
                 f.write(newhtml)
+
+    def exportToPDF(self):
+        """Export the displayed note to PDF."""
+        fname = QtWidgets.QFileDialog.getSaveFileName(
+            caption="Export Note to PDF",
+            filter="PDF Files (*.pdf);;All Files (*)")[0]
+
+        if fname:
+            pageLayout = QtGui.QPageLayout(QtGui.QPageSize(
+                QtGui.QPageSize.A4), QtGui.QPageLayout.Landscape, QtCore.QMarginsF(0, 0, 0, 0))
+            self.web.page().printToPdf(fname, pageLayout)
 
     def __del__(self):
         """Clean up temporary files on exit."""
