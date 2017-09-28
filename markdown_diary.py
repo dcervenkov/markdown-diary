@@ -434,16 +434,13 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.noteDate = datetime.date.today().isoformat()
         self.noteId = str(uuid.uuid1())
 
-        newEntry = QtWidgets.QTreeWidgetItem(
-            [self.noteId, self.noteDate, ""])
-
-        self.tree.addTopLevelItem(newEntry)
-
         self.text.clear()
         self.stack.setCurrentIndex(0)
         self.text.setFocus()
         self.text.setText("# <Untitled note>")
         self.saveNote()
+        self.loadTree(self.diary.metadata)
+        self.selectItemWithoutReload(self.noteId)
 
         # Select the '<Untitled note>' part of the new note for convenient
         # renaming
