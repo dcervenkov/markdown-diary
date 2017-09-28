@@ -469,8 +469,12 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.document().setModified(False)
         self.setTitle()
 
-        self.loadTree(self.diary.metadata)
-        self.selectItemWithoutReload(self.noteId)
+        # Change the title in the tree, without reloading the tree (that would
+        # cause the filtered results when searching to be lost)
+        self.tree.blockSignals(True)
+        self.tree.currentItem().setText(2, self.diary.getNoteMetadata(
+            self.diary.metadata, self.noteId)["title"])
+        self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
         """Delete a specified note.
@@ -717,6 +721,13 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         notes for the text and removes non-matching from the note tree. The
         text to search for is taken from the searchLine widget.
         """
+        if self.searchLine.text() == "":
+            self.loadTree(self.diary.metadata)
+            self.selectItemWithoutReload(self.noteId)
+            self.text.highlightSearch("")
+            self.web.findText("")
+            return
+
         # Search in the editor
         self.text.highlightSearch(self.searchLine.text())
 
@@ -726,6 +737,16 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # Search for matching notes
         entries = self.diary.searchNotes(self.searchLine.text())
         self.loadTree(entries)
+
+        if entries:
+            # Select the matching item in the tree. Either the current one, if it
+            # is among the matching items, or the last matching one.
+            if self.noteId in (entry["note_id"] for entry in entries):
+                self.selectItemWithoutReload(self.noteId)
+            else:
+                self.tree.setCurrentItem(self.tree.findItems(
+                    entries[-1]["note_id"], QtCore.Qt.MatchExactly)[0])
+                self.searchLine.setFocus()
 
     def searchNext(self):
         """Move main highlight (and scroll) to the next search match."""
