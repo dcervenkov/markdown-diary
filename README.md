@@ -17,3 +17,17 @@ You can install them easily using `pip3`
 ```
 pip3 install pyqt5 pygments mistune
 ```
+
+
+## Desktop Integration
+
+You may want to add Markdown Diary to your application menu and/or add an icon for it. A sample `.desktop` file and icon are provided in the `resources` folder.
+
+#### Desktop File
+
+- Change the `Path` entry in the `.desktop` file
+- Put it in the proper place (probably `~/.local/share/applications` or `/usr/share/applications`)
+
+#### Icon
+
+- Copy icon to where your theme's icons are (probably `~/.icons/<theme name>/apps/scalable` or `/usr/share/icons/<theme name>/apps/scalable`).ps/scalable`).

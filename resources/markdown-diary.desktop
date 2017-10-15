@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Markdown Diary 
+Icon=markdown-diary
+Path=<path to markdown-diary directory>
+Exec=python3 markdown_diary.py
+Terminal=false
+StartupWMClass=markdown_diary.py
