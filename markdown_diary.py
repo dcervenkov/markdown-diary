@@ -401,7 +401,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         mathBlock = re.compile(r"^\$\$(.+?)^\$\$",
                                re.DOTALL | re.MULTILINE)
 
-        if mathInline.search(markdownText or mathBlock.search(markdownText)):
+        if mathInline.search(markdownText) or mathBlock.search(markdownText):
 
             html += style.mathjax
             mathjaxScript = (
