@@ -2,10 +2,10 @@ language: python
 dist: trusty
 
 python:
-    - "3.5"
+    - "3.6"
 
 install:
-    pip install codecov pyqt5 pygments mistune
+    pip install codecov 'pyqt5<5.10' pygments mistune
 
 # Start virtual X server, from https://docs.travis-ci.com/user/gui-and-headless-browsers/
 before_script:
