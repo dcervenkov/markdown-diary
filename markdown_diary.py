@@ -482,7 +482,12 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Args:
             noteId (str, optional): UUID of the note to delete
         """
-        deleteMsg = "Do you really want to delete the note?"
+        if noteId is None:
+            noteId = self.noteId
+        noteTitle = self.diary.getNoteMetadata(
+            self.diary.metadata, self.noteId)["title"]
+
+        deleteMsg = "Do you really want to delete the note '" + noteTitle + "'?"
         reply = QtWidgets.QMessageBox.question(
             self, 'Message', deleteMsg,
             QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
@@ -490,8 +495,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if reply == QtWidgets.QMessageBox.No:
             return
 
-        if noteId is None:
-            noteId = self.noteId
         nextNoteId = self.tree.itemBelow(self.tree.currentItem()).text(0)
         self.diary.deleteNote(noteId)
         self.text.document().setModified(False)
