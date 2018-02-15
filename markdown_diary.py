@@ -76,10 +76,11 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
                 path = url.path()
                 if self.isWebImage(path):
                     fileName = os.path.basename(path)
-                    commonPath = os.path.commonpath([path,
-                                                     self.parent().parent().parent().parent().diary.fname])
+                    commonPath = os.path.commonpath(
+                        [path, self.parent().parent().parent().parent().diary.fname])
                     relPath = os.path.relpath(path, start=commonPath)
-                    imgMarkdown = '![{0}]({0} "{1}")'.format(relPath, fileName)
+                    imgMarkdown = '![{0}]({0} "{1}")\n'.format(
+                        relPath, fileName)
                     self.insertPlainText(imgMarkdown)
                 else:
                     super(MyQTextEdit, self).insertFromMimeData(source)
