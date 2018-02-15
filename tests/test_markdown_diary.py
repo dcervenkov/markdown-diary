@@ -5,6 +5,7 @@ import unittest
 from shutil import copyfile
 import os
 
+from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 
 import markdown_diary
@@ -243,6 +244,16 @@ class DiaryAppTest(unittest.TestCase):
 
         self.diary_app.updateRecentDiaries('d4')
         self.assertListEqual(self.diary_app.recentDiaries, ['d4', 'b2', 'a1', 'c3'])
+
+    def testMimePaste(self):
+
+        # Clear the current text so it's easier to test pasting
+        self.diary_app.text.setText("")
+        url = QtCore.QUrl('file://files/test.png')
+        mime = QtCore.QMimeData()
+        mime.setUrls([url])
+        self.diary_app.text.insertFromMimeData(mime)
+        self.assertEqual(self.diary_app.text.toPlainText(), '![test.png](test.png "test.png")\n')
 
 
 if __name__ == '__main__':
