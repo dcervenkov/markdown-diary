@@ -30,4 +30,4 @@ You may want to add Markdown Diary to your application menu and/or add an icon f
 
 #### Icon
 
-- Copy icon to where your theme's icons are (probably `~/.icons/<theme name>/apps/scalable` or `/usr/share/icons/<theme name>/apps/scalable`).ps/scalable`).
+- Copy icon to where your theme's icons are (probably `~/.icons/<theme name>/apps/scalable` or `/usr/share/icons/<theme name>/apps/scalable`).
