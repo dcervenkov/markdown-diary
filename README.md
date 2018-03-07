@@ -31,3 +31,7 @@ You may want to add Markdown Diary to your application menu and/or add an icon f
 #### Icon
 
 - Copy icon to where your theme's icons are (probably `~/.icons/<theme name>/apps/scalable` or `/usr/share/icons/<theme name>/apps/scalable`).
+
+## Known Issues
+
+- PyQt 5.10 crashes, printing 'Could not find QtWebEngineProcess' and a stack trace. Apparently [others](https://github.com/spyder-ide/spyder/issues/6577) have encountered a similar problem. For now, I advise you to downgrade PyQt (e.g., `pip3 install pyqt5<5.10`).

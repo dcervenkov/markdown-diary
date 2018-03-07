@@ -142,6 +142,7 @@ class DiaryAppTest(unittest.TestCase):
         copyfile(diaryFileName, tempDiaryFileName)
 
         self.diary_app = markdown_diary.DiaryApp()
+        self.diary_app.loadDiary(os.path.abspath(tempDiaryFileName))
 
     def tearDown(self):
 
@@ -249,11 +250,21 @@ class DiaryAppTest(unittest.TestCase):
 
         # Clear the current text so it's easier to test pasting
         self.diary_app.text.setText("")
-        url = QtCore.QUrl('file://files/test.png')
+        url = QtCore.QUrl('file://' + os.path.abspath('tests/files/test.png'))
         mime = QtCore.QMimeData()
         mime.setUrls([url])
         self.diary_app.text.insertFromMimeData(mime)
-        self.assertEqual(self.diary_app.text.toPlainText(), '![test.png](test.png "test.png")\n')
+        self.assertEqual(self.diary_app.text.toPlainText(), '![files/test.png](files/test.png "test.png")\n')
+
+    def testMimePasteExternalPath(self):
+
+        # Clear the current text so it's easier to test pasting
+        self.diary_app.text.setText("")
+        url = QtCore.QUrl('file://' + os.path.abspath('files/test.png'))
+        mime = QtCore.QMimeData()
+        mime.setUrls([url])
+        self.diary_app.text.insertFromMimeData(mime)
+        self.assertEqual(self.diary_app.text.toPlainText(), '![../files/test.png](../files/test.png "test.png")\n')
 
 
 if __name__ == '__main__':
