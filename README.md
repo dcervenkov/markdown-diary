@@ -1,4 +1,5 @@
-# Markdown Diary
+# <img src="resources/markdown-diary.svg" style="margin-bottom:-11px;">arkdown Diary
+
 
 [![Build Status](https://travis-ci.org/dcervenkov/markdown-diary.svg?branch=master)](https://travis-ci.org/dcervenkov/markdown-diary)
 [![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/dcervenkov/markdown-diary.svg?maxAge=2592000)](https://codecov.io/github/dcervenkov/markdown-diary?branch=master)
