@@ -123,7 +123,9 @@ class Diary():
         newData += "\n\n"
         newData += note
         if nextHeader is not None:
-            newData += "\n"
+            # We need a newline separating note text from next header
+            if newData[-1] is not '\n':
+                newData += "\n"
             newData += self.data[nextHeader.start():]
 
         self.updateDiaryOnDisk(newData)
@@ -208,6 +210,9 @@ class Diary():
             A single note's text.
 
         """
+        if not any([noteId in metaDict["note_id"] for metaDict in self.metadata]):
+            return None
+
         reHeader = re.compile(
             r"""^<!---
                 (?:\n|\r\n)

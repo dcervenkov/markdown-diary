@@ -34,11 +34,7 @@ class DiaryTest(unittest.TestCase):
         # Delete the temporary diary
         os.remove(tempDiaryFileName)
 
-    def test__init__(self):
-
-        pass
-
-    def test_saving_of_a_diary(self):
+    def testSavingOfDiary(self):
 
         self.diary.updateDiaryOnDisk('TEST')
 
@@ -83,7 +79,7 @@ class DiaryTest(unittest.TestCase):
         header = self.diary.createNoteHeader("123", "2015-03-15")
         self.assertEqual(header, testHeader)
 
-    def test_updating_of_a_note(self):
+    def testUpdatingOfNote(self):
 
         self.diary.updateNote(
             'TEST', 'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1999-01-01')
@@ -94,7 +90,7 @@ class DiaryTest(unittest.TestCase):
         self.assertEqual(note, 'TEST\n')
         self.assertEqual(noteDate, '1999-01-01')
 
-    def test_deleting_of_a_note(self):
+    def testDeletingOfNote(self):
 
         self.diary.deleteNote('a3ea0c44-ed00-11e6-a9cf-c4850828558c')
 
@@ -114,7 +110,7 @@ class DiaryTest(unittest.TestCase):
 
         self.assertListEqual(metadata, refMetadata)
 
-    def test_getting_of_metadata_from_diary(self):
+    def testGettingOfMetadataFromDiary(self):
 
         with open(diaryFileName) as f:
             diaryData = f.read()
@@ -136,7 +132,7 @@ class DiaryTest(unittest.TestCase):
 
         self.assertListEqual(metadata, refMetadata)
 
-    def test_getting_of_a_note(self):
+    def testGettingOfNote(self):
 
         with open(diaryFileName) as f:
             diaryData = f.read()
@@ -150,7 +146,12 @@ class DiaryTest(unittest.TestCase):
 
         self.assertMultiLineEqual(note, refNote)
 
-    def test_getting_note_metadata(self):
+    def testGettingNonexistentNote(self):
+
+        note = self.diary.getNote('nonexistentid')
+        self.assertIsNone(note)
+
+    def testGettingNoteMetadata(self):
 
         noteMetadata = self.diary.getNoteMetadata(
             'a3ea0c44-ed00-11e6-a9cf-c48508000000')
@@ -161,6 +162,45 @@ class DiaryTest(unittest.TestCase):
                        'date': '2015-05-05'}
 
         self.assertEqual(noteMetadata, refMetadata)
+
+    def testGettingNonexistentMetadata(self):
+
+        metadata = self.diary.getNoteMetadata('nonexistentid')
+        self.assertIsNone(metadata)
+
+    def testSavingOfExternallyChangedDiary(self):
+
+        with open(tempDiaryFileName, 'a') as f:
+            f.write("An externally added line")
+
+        self.diary.updateDiaryOnDisk("A whole diary")
+
+        self.assertNotEqual(self.diary.data, "A whole diary")
+
+    def testChangeNoteDate(self):
+
+        refNote = self.diary.getNote('a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        self.diary.changeNoteDate('a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
+        self.diary.changeNoteDate('a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
+
+        noteMetadata = self.diary.getNoteMetadata(
+            'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        note = self.diary.getNote('a3ea0c44-ed00-11e6-a9cf-c48508000000')
+
+        refMetadata = {'version': '3',
+                       'title': 'Short note',
+                       'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
+                       'date': '1234-05-05'}
+
+        self.assertEqual(noteMetadata, refMetadata)
+        self.assertMultiLineEqual(note, refNote)
+
+    def testIsValidDate(self):
+
+        self.assertFalse(self.diary.isValidDate('bla-bla'))
+        self.assertFalse(self.diary.isValidDate('0'))
+        self.assertFalse(self.diary.isValidDate('2015-3-14'))
+        self.assertTrue(self.diary.isValidDate('2015-03-14'))
 
 
 class DiaryAppTest(unittest.TestCase):
@@ -186,7 +226,7 @@ class DiaryAppTest(unittest.TestCase):
 
         pass
 
-    def test_creating_HTML_from_Markdown(self):
+    def testCreatingHTMLFromMarkdown(self):
 
         self.maxDiff = None
         with open(noteFileName) as f:
@@ -210,7 +250,7 @@ class DiaryAppTest(unittest.TestCase):
 
         self.assertMultiLineEqual(noteHtml, refNoteHtml)
 
-    def test_displaying_of_HTML_rendered_Markdown(self):
+    def testDisplayingOfHTMLRenderedMarkdown(self):
 
         self.maxDiff = None
 
