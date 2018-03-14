@@ -24,7 +24,7 @@ class DiaryTest(unittest.TestCase):
 
     def setUp(self):
 
-        # create a temporary diary to be used in tests
+        # create a temporary diary for each test
         copyfile(diaryFileName, tempDiaryFileName)
 
         self.diary = d.Diary(tempDiaryFileName)
@@ -49,11 +49,39 @@ class DiaryTest(unittest.TestCase):
 
     def testSaveNote(self):
 
-        pass
+        testNote = "Save test"
+        testNote2 = "Save test 2"
+        testNoteId = "123"
+        testNoteDate = "2015-03-15"
+        testNoteDate2 = "2015-03-16"
+
+        self.diary.saveNote(testNote, testNoteId, testNoteDate)
+        note = self.diary.getNote(testNoteId)
+        date = self.diary.getNoteMetadata(testNoteId)["date"]
+
+        self.assertEqual(note, testNote)
+        self.assertEqual(date, testNoteDate)
+
+        # Test saving an existing note (updating)
+        self.diary.saveNote(testNote2, testNoteId, testNoteDate2)
+        note = self.diary.getNote(testNoteId)
+        date = self.diary.getNoteMetadata(testNoteId)["date"]
+
+        self.assertEqual(note, testNote2)
+        self.assertEqual(date, testNoteDate2)
 
     def testCreateNoteHeader(self):
 
-        pass
+        testHeader = ("\n"
+                      "<!---\n"
+                      "markdown-diary note metadata\n"
+                      "note_id = 123\n"
+                      "--->\n"
+                      "2015-03-15\n"
+                      "\n")
+
+        header = self.diary.createNoteHeader("123", "2015-03-15")
+        self.assertEqual(header, testHeader)
 
     def test_updating_of_a_note(self):
 

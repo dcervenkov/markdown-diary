@@ -65,8 +65,6 @@ class Diary():
             self.updateNote(note, noteId, noteDate)
         else:
             newData = self.data
-            noteDate = datetime.date.today().isoformat()
-            noteId = noteId
             newData += self.createNoteHeader(noteId, noteDate)
             newData += note
             self.updateDiaryOnDisk(newData)
