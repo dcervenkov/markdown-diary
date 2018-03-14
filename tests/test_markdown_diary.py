@@ -40,7 +40,7 @@ class DiaryTest(unittest.TestCase):
 
     def test_saving_of_a_diary(self):
 
-        self.diary.saveDiary('TEST')
+        self.diary.updateDiaryOnDisk('TEST')
 
         with open(tempDiaryFileName) as f:
             diaryData = f.read()
@@ -57,10 +57,11 @@ class DiaryTest(unittest.TestCase):
 
     def test_updating_of_a_note(self):
 
-        self.diary.updateNote('TEST', 'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1999-01-01')
-        note = self.diary.getNote(self.diary.data, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        self.diary.updateNote(
+            'TEST', 'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1999-01-01')
+        note = self.diary.getNote('a3ea0c44-ed00-11e6-a9cf-c48508000000')
         noteDate = self.diary.getNoteMetadata(
-            self.diary.metadata, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')['date']
+            'a3ea0c44-ed00-11e6-a9cf-c48508000000')['date']
 
         self.assertEqual(note, 'TEST\n')
         self.assertEqual(noteDate, '1999-01-01')
@@ -112,7 +113,7 @@ class DiaryTest(unittest.TestCase):
         with open(diaryFileName) as f:
             diaryData = f.read()
 
-        note = self.diary.getNote(diaryData, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        note = self.diary.getNote('a3ea0c44-ed00-11e6-a9cf-c48508000000')
 
         refNote = ("# Short note"
                    "\n\n"
@@ -124,12 +125,12 @@ class DiaryTest(unittest.TestCase):
     def test_getting_note_metadata(self):
 
         noteMetadata = self.diary.getNoteMetadata(
-            self.diary.metadata, 'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+            'a3ea0c44-ed00-11e6-a9cf-c48508000000')
 
         refMetadata = {'version': '3',
-                        'title': 'Short note',
-                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
-                        'date': '2015-05-05'}
+                       'title': 'Short note',
+                       'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
+                       'date': '2015-05-05'}
 
         self.assertEqual(noteMetadata, refMetadata)
 
@@ -234,7 +235,8 @@ class DiaryAppTest(unittest.TestCase):
         self.assertListEqual(self.diary_app.recentNotes, ['b2', 'a1', 'c3'])
 
         self.diary_app.updateRecentNotes('d4')
-        self.assertListEqual(self.diary_app.recentNotes, ['d4', 'b2', 'a1', 'c3'])
+        self.assertListEqual(self.diary_app.recentNotes,
+                             ['d4', 'b2', 'a1', 'c3'])
 
     def testUpdateRecentDiaries(self):
 
@@ -244,7 +246,8 @@ class DiaryAppTest(unittest.TestCase):
         self.assertListEqual(self.diary_app.recentDiaries, ['b2', 'a1', 'c3'])
 
         self.diary_app.updateRecentDiaries('d4')
-        self.assertListEqual(self.diary_app.recentDiaries, ['d4', 'b2', 'a1', 'c3'])
+        self.assertListEqual(self.diary_app.recentDiaries,
+                             ['d4', 'b2', 'a1', 'c3'])
 
     def testMimePaste(self):
 
@@ -254,7 +257,8 @@ class DiaryAppTest(unittest.TestCase):
         mime = QtCore.QMimeData()
         mime.setUrls([url])
         self.diary_app.text.insertFromMimeData(mime)
-        self.assertEqual(self.diary_app.text.toPlainText(), '![files/test.png](files/test.png "test.png")\n')
+        self.assertEqual(self.diary_app.text.toPlainText(),
+                         '![files/test.png](files/test.png "test.png")\n')
 
     def testMimePasteExternalPath(self):
 
@@ -264,7 +268,8 @@ class DiaryAppTest(unittest.TestCase):
         mime = QtCore.QMimeData()
         mime.setUrls([url])
         self.diary_app.text.insertFromMimeData(mime)
-        self.assertEqual(self.diary_app.text.toPlainText(), '![../files/test.png](../files/test.png "test.png")\n')
+        self.assertEqual(self.diary_app.text.toPlainText(),
+                         '![../files/test.png](../files/test.png "test.png")\n')
 
 
 if __name__ == '__main__':

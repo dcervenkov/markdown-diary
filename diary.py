@@ -25,8 +25,14 @@ class Diary():
         self.checksum = binascii.crc32(bytes(self.data, encoding="UTF-8"))
         self.metadata = self.getMetadata(self.data)
 
-    def saveDiary(self, newData):
+    def updateDiaryOnDisk(self, newData):
+        """Save all changes to the diary to disk.
 
+        If the diary's checksum changed in the meantime, abort the save.
+
+        Args:
+            newData (str): The whole diary as a string to be saved to disk.
+        """
         with open(self.fname) as f:
             data = f.read()
         checksum = binascii.crc32(bytes(data, encoding="UTF-8"))
@@ -48,7 +54,13 @@ class Diary():
             print("ERROR: Diary file was changed! Abort save.")
 
     def saveNote(self, note, noteId, noteDate):
+        """Save a new note to diary or update an existing one.
 
+        Args:
+            note (str): The note's contents.
+            noteId (str): UUID of the note.
+            noteDate (str): Note creation date.
+        """
         if any(noteId in metaDict["note_id"] for metaDict in self.metadata):
             self.updateNote(note, noteId, noteDate)
         else:
@@ -57,10 +69,20 @@ class Diary():
             noteId = noteId
             newData += self.createNoteHeader(noteId, noteDate)
             newData += note
-            self.saveDiary(newData)
+            self.updateDiaryOnDisk(newData)
 
-    def createNoteHeader(self, noteId, noteDate):
+    @staticmethod
+    def createNoteHeader(noteId, noteDate):
+        """Create a note metadata header.
 
+        Args:
+            noteId (str): UUID of the note
+            noteDate (str): Date of the note's creation
+
+        Returns:
+            Note header string.
+
+        """
         header = ("\n<!---\n"
                   "markdown-diary note metadata\n"
                   "note_id = ")
@@ -72,7 +94,13 @@ class Diary():
         return header
 
     def updateNote(self, note, noteId, noteDate):
+        """Update an existing note.
 
+        Args:
+            note (str): The note's new contents.
+            noteId (str): UUID of the note.
+            noteDate (str): Note creation date.
+        """
         reHeader = re.compile(
             r"""^<!---
                 (?:\n|\r\n)
@@ -100,10 +128,14 @@ class Diary():
             newData += "\n"
             newData += self.data[nextHeader.start():]
 
-        self.saveDiary(newData)
+        self.updateDiaryOnDisk(newData)
 
     def deleteNote(self, noteId):
+        """Delete a note from a diary.
 
+        Args:
+            noteId (str): UUID of the note to be deleted.
+        """
         reHeader = re.compile(
             r"""^<!---
                 (?:\n|\r\n)
@@ -127,10 +159,19 @@ class Diary():
             newData += "\n"
             newData += self.data[nextHeader.start():]
 
-        self.saveDiary(newData)
+        self.updateDiaryOnDisk(newData)
 
-    def getMetadata(self, diaryData):
+    @staticmethod
+    def getMetadata(diaryData):
+        """Get all notes' metadata from a diary.
 
+        Args:
+            diaryData (str): The whole diary as a string.
+
+        Returns:
+            A list of metadata dictionaries.
+
+        """
         reHeader = re.compile(
             r"""^<!---                         # Beggining of Markdown comment
                 (?:\n|\r\n)                    # Unix|Windows non-capturing \n
@@ -159,8 +200,16 @@ class Diary():
 
         return metadata
 
-    def getNote(self, diaryData, noteId):
+    def getNote(self, noteId):
+        """Extract note text from diary.
 
+        Args:
+            noteId (str): UUID of the requested note.
+
+        Returns:
+            A single note's text.
+
+        """
         reHeader = re.compile(
             r"""^<!---
                 (?:\n|\r\n)
@@ -179,19 +228,30 @@ class Diary():
             r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
             re.MULTILINE)
 
-        header = reHeader.search(diaryData)
-        nextHeader = reHeaderNext.search(diaryData, header.end())
+        header = reHeader.search(self.data)
+        nextHeader = reHeaderNext.search(self.data, header.end())
 
+        # If this is the last note in the diary, return everything that follows
         if nextHeader is None:
-            return diaryData[header.end():]
-        else:
-            return diaryData[header.end(): nextHeader.start()]
+            return self.data[header.end():]
 
-    def getNoteMetadata(self, metadata, noteId):
+        return self.data[header.end(): nextHeader.start()]
 
-        for metaDict in metadata:
+    def getNoteMetadata(self, noteId):
+        """Get metadata of a single note.
+
+        Args:
+            noteId (str): UUID of the requested note.
+
+        Returns:
+            A metadata dictionary. Returns None if noteId not found.
+
+        """
+        for metaDict in self.metadata:
             if noteId == metaDict["note_id"]:
                 return metaDict
+
+        return None
 
     def searchNotes(self, pattern):
         """Search for all notes containing 'pattern'.
@@ -201,20 +261,22 @@ class Diary():
 
         Returns:
             A list of metadata of all matching notes.
+
         """
         matching = []
         rePattern = re.compile(re.escape(pattern), re.IGNORECASE)
         for metadatum in self.metadata:
-            if rePattern.search(self.getNote(self.data, metadatum["note_id"])):
+            if rePattern.search(self.getNote(metadatum["note_id"])):
                 matching.append(metadatum)
 
         return matching
 
     def changeNoteDate(self, noteId, newDate):
         """Change date of a note."""
-        self.saveNote(self.getNote(self.data, noteId), noteId, newDate)
+        self.saveNote(self.getNote(noteId), noteId, newDate)
 
-    def isValidDate(self, date):
+    @staticmethod
+    def isValidDate(date):
         """Check whether a date is of a valid format."""
         try:
             datetime.datetime.strptime(date, '%Y-%m-%d')

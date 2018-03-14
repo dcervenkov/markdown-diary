@@ -77,7 +77,8 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
                 if self.isWebImage(path):
                     fileName = os.path.basename(path)
                     diaryPath = self.parent().parent().parent().parent().diary.fname
-                    relPath = os.path.relpath(path, start=os.path.dirname(diaryPath))
+                    relPath = os.path.relpath(
+                        path, start=os.path.dirname(diaryPath))
                     imgMarkdown = '![{0}]({0} "{1}")\n'.format(
                         relPath, fileName)
                     self.insertPlainText(imgMarkdown)
@@ -470,7 +471,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # cause the filtered results when searching to be lost)
         self.tree.blockSignals(True)
         self.tree.currentItem().setText(2, self.diary.getNoteMetadata(
-            self.diary.metadata, self.noteId)["title"])
+            self.noteId)["title"])
         self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
@@ -484,8 +485,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         """
         if noteId is None:
             noteId = self.noteId
-        noteTitle = self.diary.getNoteMetadata(
-            self.diary.metadata, self.noteId)["title"]
+        noteTitle = self.diary.getNoteMetadata(self.noteId)["title"]
 
         deleteMsg = "Do you really want to delete the note '" + noteTitle + "'?"
         reply = QtWidgets.QMessageBox.question(
@@ -544,7 +544,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             else:
                 print("ERROR:" + fname + "is not a valid diary file!")
 
-    def isValidDiary(self, fname):
+    @staticmethod
+    def isValidDiary(fname):
         """Check if a file path leads to a valid diary.
 
         Args:
@@ -706,12 +707,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def displayNote(self, noteId):
         """Display a specified note."""
-        self.text.setText(self.diary.getNote(self.diary.data, noteId))
+        self.text.setText(self.diary.getNote(noteId))
         self.setTitle()
         self.noteId = noteId
         self.updateRecentNotes(noteId)
-        self.noteDate = self.diary.getNoteMetadata(
-            self.diary.metadata, noteId)["date"]
+        self.noteDate = self.diary.getNoteMetadata(noteId)["date"]
         self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
     def search(self):
@@ -803,7 +803,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
     def exportToHTML(self):
         """Export the displayed note to HTML."""
-        markdownText = self.diary.getNote(self.diary.data, self.noteId)
+        markdownText = self.diary.getNote(self.noteId)
         html = self.createHTML(markdownText)
 
         # To be able to load the CSS during normal operation correctly, we have
