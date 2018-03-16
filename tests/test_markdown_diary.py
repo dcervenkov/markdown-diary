@@ -180,8 +180,10 @@ class DiaryTest(unittest.TestCase):
     def testChangeNoteDate(self):
 
         refNote = self.diary.getNote('a3ea0c44-ed00-11e6-a9cf-c48508000000')
-        self.diary.changeNoteDate('a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
-        self.diary.changeNoteDate('a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
+        self.diary.changeNoteDate(
+            'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
+        self.diary.changeNoteDate(
+            'a3ea0c44-ed00-11e6-a9cf-c48508000000', '1234-05-05')
 
         noteMetadata = self.diary.getNoteMetadata(
             'a3ea0c44-ed00-11e6-a9cf-c48508000000')
@@ -201,6 +203,13 @@ class DiaryTest(unittest.TestCase):
         self.assertFalse(self.diary.isValidDate('0'))
         self.assertFalse(self.diary.isValidDate('2015-3-14'))
         self.assertTrue(self.diary.isValidDate('2015-03-14'))
+
+    def testSearchNotes(self):
+
+        refIds = ['a3ea0c44-ed00-11e6-a9cf-c4850828558c',
+                  'a3ea0c44-ed00-11e6-a9cf-c48508000001']
+        ids = [metadatum['note_id'] for metadatum in self.diary.searchNotes("2")]
+        self.assertEqual(ids, refIds)
 
 
 class DiaryAppTest(unittest.TestCase):
