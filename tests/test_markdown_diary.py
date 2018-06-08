@@ -348,6 +348,16 @@ class DiaryAppTest(unittest.TestCase):
         self.assertEqual(self.diary_app.text.toPlainText(),
                          '![../files/test.png](../files/test.png "test.png")\n')
 
+    def testCreatingANewDiary(self):
+
+        with open(tempDiaryFileName, 'w'):
+            os.utime(tempDiaryFileName)
+
+        self.diary_app.loadDiary(tempDiaryFileName)
+        self.diary_app.newNote()
+        # Doesn't need an assert as the error for which this tests caused an
+        # AttributeError
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -470,8 +470,17 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # Change the title in the tree, without reloading the tree (that would
         # cause the filtered results when searching to be lost)
         self.tree.blockSignals(True)
+
+        # When there are no items in the tree (new diary) must add the item
+        # first and select it
+        if self.tree.topLevelItemCount() == 0:
+            newItem = QtWidgets.QTreeWidgetItem([self.noteId, self.noteDate, ""])
+            self.tree.addTopLevelItem(newItem)
+            self.tree.setCurrentItem(newItem)
+
         self.tree.currentItem().setText(2, self.diary.getNoteMetadata(
             self.noteId)["title"])
+
         self.tree.blockSignals(False)
 
     def deleteNote(self, noteId=None):
@@ -508,6 +517,18 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Enable relevant toolbar items (new note, save note, etc.), in case
         no diary was open before and they were disabled.
         """
+        if self.text.document().isModified():
+            reply = self.promptToSaveOrDiscard()
+
+            if reply == QtWidgets.QMessageBox.Cancel:
+                return
+
+            elif reply == QtWidgets.QMessageBox.Discard:
+                self.text.document().setModified(False)
+
+            elif reply == QtWidgets.QMessageBox.Save:
+                self.saveNote()
+
         fname = QtWidgets.QFileDialog.getSaveFileName(
             caption="Create a New Diary",
             filter="Markdown Files (*.md);;All Files (*)")[0]
@@ -525,6 +546,18 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Enable relevant toolbar items (new note, save note, etc.), in case
         no diary was open before and they were disabled.
         """
+        if self.text.document().isModified():
+            reply = self.promptToSaveOrDiscard()
+
+            if reply == QtWidgets.QMessageBox.Cancel:
+                return
+
+            elif reply == QtWidgets.QMessageBox.Discard:
+                self.text.document().setModified(False)
+
+            elif reply == QtWidgets.QMessageBox.Save:
+                self.saveNote()
+
         fname = QtWidgets.QFileDialog.getOpenFileName(
             caption="Open Diary",
             filter="Markdown Files (*.md);;All Files (*)")[0]
@@ -566,6 +599,18 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         Args:
             fname (str): Path to a file containing a diary.
         """
+        if self.text.document().isModified():
+            reply = self.promptToSaveOrDiscard()
+
+            if reply == QtWidgets.QMessageBox.Cancel:
+                return
+
+            elif reply == QtWidgets.QMessageBox.Discard:
+                self.text.document().setModified(False)
+
+            elif reply == QtWidgets.QMessageBox.Save:
+                self.saveNote()
+
         self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
 
@@ -607,7 +652,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.recentDiaries.insert(0, fname)
 
             if len(self.recentDiaries) > self.maxRecentItems:
-                del self.recentDiaries[:-self.maxRecentItems]
+                del self.recentDiaries[self.maxRecentItems:]
 
         for recent in self.recentDiariesActions:
             recent.setVisible(False)
