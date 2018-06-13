@@ -113,6 +113,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.openDiaryAction = None
         self.searchLineAction = None
         self.recentDiariesActions = None
+        self.clearRecentDiariesAction = None
+        self.quitAction = None
 
         self.searchLine = None
         self.toolbar = None
@@ -246,6 +248,18 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.openDiaryAction.setStatusTip("Open diary")
         self.openDiaryAction.triggered.connect(self.openDiary)
 
+        self.clearRecentDiariesAction = QtWidgets.QAction("Clear list", self)
+        self.clearRecentDiariesAction.setStatusTip("Clear list")
+        self.clearRecentDiariesAction.triggered.connect(
+            lambda: self.clearRecentDiaries())  # pylint: disable=unnecessary-lambda
+
+        self.quitAction = QtWidgets.QAction("Quit", self)
+        self.quitAction.setStatusTip("Quit the application")
+        self.quitAction.setMenuRole(QtWidgets.QAction.QuitRole)
+        self.quitAction.setShortcut(QtGui.QKeySequence.Quit)
+        self.quitAction.triggered.connect(
+            lambda: self.close()) # pylint: disable=unnecessary-lambda
+
         self.deleteNoteAction = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("remove"), "Delete Note", self)
         self.deleteNoteAction.setShortcut("Del")
@@ -303,6 +317,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             action.setVisible(False)
             self.recentDiariesActions.append(action)
             self.fileMenu.addAction(action)
+
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.clearRecentDiariesAction)
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.quitAction)
 
         self.noteMenu = self.menuBar().addMenu("&Note")
         self.noteMenu.addAction(self.newNoteAction)
@@ -670,6 +689,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.recentDiariesActions[i].triggered.disconnect()
             self.recentDiariesActions[i].triggered.connect(
                 lambda dummy=False, recent=recent: self.loadDiary(recent))
+
+    def clearRecentDiaries(self):
+        """Clear the list of recent diaries."""
+        self.recentDiaries = []
+        self.updateRecentDiaries()
 
     def updateRecentNotes(self, noteId):
         """Update list of recently viewed notes.

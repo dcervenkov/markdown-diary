@@ -378,6 +378,14 @@ class DiaryAppTest(unittest.TestCase):
 
         os.remove(secondTempFile)
 
+    def testClearRecentDiaries(self):
+
+        self.diary_app.clearRecentDiaries()
+        visible = 0
+        for recent in self.diary_app.recentDiariesActions:
+            if recent.isVisible():
+                visible += 1
+        self.assertEqual(visible, 0)
 
 if __name__ == '__main__':
     unittest.main()
