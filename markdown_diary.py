@@ -474,7 +474,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # When there are no items in the tree (new diary) must add the item
         # first and select it
         if self.tree.topLevelItemCount() == 0:
-            newItem = QtWidgets.QTreeWidgetItem([self.noteId, self.noteDate, ""])
+            newItem = QtWidgets.QTreeWidgetItem(
+                [self.noteId, self.noteDate, ""])
             self.tree.addTopLevelItem(newItem)
             self.tree.setCurrentItem(newItem)
 
@@ -624,10 +625,13 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         # Check if we saved a recent noteId for this diary and open it if we
         # did, otherwise open the newest note
-        if (self.recentNotes and any(self.recentNotes[0] in metaDict["note_id"]
-                                     for metaDict in self.diary.metadata)):
-            lastNoteId = self.recentNotes[0]
-        else:
+        lastNoteId = ""
+        for recentNote in self.recentNotes:
+            if recentNote in (metaDict["note_id"] for metaDict in self.diary.metadata):
+                lastNoteId = recentNote
+                break
+
+        if lastNoteId == "":
             lastNoteId = self.diary.metadata[-1]["note_id"]
 
         self.tree.setCurrentItem(

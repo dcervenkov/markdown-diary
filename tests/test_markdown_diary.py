@@ -208,7 +208,8 @@ class DiaryTest(unittest.TestCase):
 
         refIds = ['a3ea0c44-ed00-11e6-a9cf-c4850828558c',
                   'a3ea0c44-ed00-11e6-a9cf-c48508000001']
-        ids = [metadatum['note_id'] for metadatum in self.diary.searchNotes("2")]
+        ids = [metadatum['note_id']
+               for metadatum in self.diary.searchNotes("2")]
         self.assertEqual(ids, refIds)
 
 
@@ -357,6 +358,25 @@ class DiaryAppTest(unittest.TestCase):
         self.diary_app.newNote()
         # Doesn't need an assert as the error for which this tests caused an
         # AttributeError
+
+    def testLastOpenNoteWhenSwitchingDiaries(self):
+
+        noteToRemember = 'a3ea0c44-ed00-11e6-a9cf-c48508000000'
+        self.diary_app.displayNote(noteToRemember)
+
+        # Create a new diary file, open it and save a note in it
+        secondTempFile = "tests/diary_temp2.md"
+        with open(secondTempFile, "w") as f:
+            f.write('\n')
+
+        self.diary_app.loadDiary(secondTempFile)
+        self.diary_app.newNote()
+        self.diary_app.displayNote(self.diary_app.noteId)
+        self.diary_app.loadDiary(tempDiaryFileName)
+
+        self.assertEqual(self.diary_app.noteId, noteToRemember)
+
+        os.remove(secondTempFile)
 
 
 if __name__ == '__main__':
