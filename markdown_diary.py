@@ -284,9 +284,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.searchLineAction = QtWidgets.QWidgetAction(self)
         self.searchLineAction.setDefaultWidget(self.searchLine)
-        self.searchLineAction.setShortcut("Ctrl+F")
-        self.searchLineAction.triggered.connect(
-            lambda: self.searchLine.setFocus())  # pylint: disable=unnecessary-lambda
+        self.searchLineAction.setShortcut(QtGui.QKeySequence.Find)
+        self.searchLineAction.triggered.connect(self.selectSearch)
         self.searchLine.textChanged.connect(self.search)
         self.searchLine.returnPressed.connect(self.searchNext)
 
@@ -786,6 +785,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.updateRecentNotes(noteId)
         self.noteDate = self.diary.getNoteMetadata(noteId)["date"]
         self.displayHTMLRenderedMarkdown(self.text.toPlainText())
+
+    def selectSearch(self):
+        """Focus the search widget and select its contents."""
+        self.searchLine.setFocus()
+        self.searchLine.selectAll()
 
     def search(self):
         """Search and highlight text in all notes.
