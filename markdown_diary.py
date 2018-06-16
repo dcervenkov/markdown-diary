@@ -15,6 +15,7 @@ import datetime
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineSettings
 # from PyQt5.QtCore import pyqtRemoveInputHook # enable for debugging
 
 from markdownhighlighter import MarkdownHighlighter
@@ -185,6 +186,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.textChanged.connect(self.setTitle)
 
         self.web = QWebEngineView(self)
+        self.web.settings().setAttribute(QWebEngineSettings.FocusOnNavigationEnabled, False)
 
         self.highlighter = MarkdownHighlighter(self.text)
 
