@@ -182,7 +182,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.text = MyQTextEdit(self)
         self.text.setAcceptRichText(False)
-        self.text.setFont(QtGui.QFont("Ubuntu Mono"))
+        self.text.setFont(QtGui.QFont(
+            QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)))
         self.text.textChanged.connect(self.setTitle)
 
         self.web = QWebEngineView(self)
