@@ -920,6 +920,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             filter="PDF Files (*.pdf);;All Files (*)")[0]
 
         if fname:
+            # Make sure we export the current version of the text
+            if self.stack.currentIndex() == 0:
+                self.displayHTMLRenderedMarkdown(self.text.toPlainText())
+
             pageLayout = QtGui.QPageLayout(QtGui.QPageSize(
                 QtGui.QPageSize.A4), QtGui.QPageLayout.Landscape, QtCore.QMarginsF(0, 0, 0, 0))
             self.web.page().printToPdf(fname, pageLayout)
