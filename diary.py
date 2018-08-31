@@ -21,9 +21,9 @@ class Diary():
         """
         self.fname = fname
         with open(fname) as f:
-            self.data = f.read()
-        self.checksum = binascii.crc32(bytes(self.data, encoding="UTF-8"))
-        self.metadata = self.getMetadata(self.data)
+            self.rawData = f.read()
+        self.checksum = binascii.crc32(bytes(self.rawData, encoding="UTF-8"))
+        self.data = self.extractData(self.rawData)
 
     def updateDiaryOnDisk(self, newData):
         """Save all changes to the diary to disk.
@@ -34,8 +34,8 @@ class Diary():
             newData (str): The whole diary as a string to be saved to disk.
         """
         with open(self.fname) as f:
-            data = f.read()
-        checksum = binascii.crc32(bytes(data, encoding="UTF-8"))
+            rawData = f.read()
+        checksum = binascii.crc32(bytes(rawData, encoding="UTF-8"))
 
         if checksum == self.checksum:
             newChecksum = binascii.crc32(bytes(newData, encoding="UTF-8"))
@@ -46,9 +46,9 @@ class Diary():
                 tmpf.write(newData)
             os.replace(tmpf.name, self.fname)
 
-            self.data = newData
+            self.rawData = newData
             self.checksum = newChecksum
-            self.metadata = self.getMetadata(self.data)
+            self.data = self.extractData(self.rawData)
 
         else:
             print("ERROR: Diary file was changed! Abort save.")
@@ -61,10 +61,10 @@ class Diary():
             noteId (str): UUID of the note.
             noteDate (str): Note creation date.
         """
-        if any(noteId in metaDict["note_id"] for metaDict in self.metadata):
+        if any(noteId in metaDict["note_id"] for metaDict in self.data):
             self.updateNote(note, noteId, noteDate)
         else:
-            newData = self.data
+            newData = self.rawData
             newData += self.createNoteHeader(noteId, noteDate)
             newData += note
             self.updateDiaryOnDisk(newData)
@@ -114,10 +114,10 @@ class Diary():
             r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
             re.MULTILINE)
 
-        header = reHeader.search(self.data)
-        nextHeader = reHeaderNext.search(self.data, header.end())
+        header = reHeader.search(self.rawData)
+        nextHeader = reHeaderNext.search(self.rawData, header.end())
 
-        newData = self.data[:header.end()]
+        newData = self.rawData[:header.end()]
         newData += "\n"
         newData += noteDate
         newData += "\n\n"
@@ -126,7 +126,7 @@ class Diary():
             # We need a newline separating note text from next header
             if newData[-1] is not '\n':
                 newData += "\n"
-            newData += self.data[nextHeader.start():]
+            newData += self.rawData[nextHeader.start():]
 
         self.updateDiaryOnDisk(newData)
 
@@ -151,25 +151,25 @@ class Diary():
             r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
             re.MULTILINE)
 
-        header = reHeader.search(self.data)
-        nextHeader = reHeaderNext.search(self.data, header.end())
+        header = reHeader.search(self.rawData)
+        nextHeader = reHeaderNext.search(self.rawData, header.end())
 
-        newData = self.data[:header.start()]
+        newData = self.rawData[:header.start()]
         if nextHeader is not None:
             newData += "\n"
-            newData += self.data[nextHeader.start():]
+            newData += self.rawData[nextHeader.start():]
 
         self.updateDiaryOnDisk(newData)
 
     @staticmethod
-    def getMetadata(diaryData):
-        """Get all notes' metadata from a diary.
+    def extractData(rawData):
+        """Get all notes' metadata and text from a diary.
 
         Args:
             diaryData (str): The whole diary as a string.
 
         Returns:
-            A list of metadata dictionaries.
+            A list of data dictionaries.
 
         """
         reHeader = re.compile(
@@ -180,25 +180,32 @@ class Diary():
                 --->                           # End of Markdown comment
                 """, re.MULTILINE | re.VERBOSE | re.DOTALL)
 
-        matches = reHeader.finditer(diaryData)
+        matches = list(reHeader.finditer(rawData))
 
-        metadata = []
-        for match in matches:
-            metaDict = {}
-            for line in diaryData[
+        data = []
+        for i, match in enumerate(matches):
+            dataDict = {}
+            for line in rawData[
                     match.start():match.end()].splitlines()[2:-1]:
                 key, val = line.partition("=")[::2]
-                metaDict[key.strip()] = val.strip()
+                dataDict[key.strip()] = val.strip()
 
-            date = diaryData[match.end():].splitlines()[1]
-            title = diaryData[match.end():].splitlines()[3].strip("# ")
+            date = rawData[match.end():].splitlines()[1]
+            title = rawData[match.end():].splitlines()[3].strip("# ")
 
-            metaDict["date"] = date
-            metaDict["title"] = title
+            text = ""
+            if i == len(matches) - 1:
+                text = rawData[matches[i].end():].split("\n", maxsplit=3)[3]
+            else:
+                text = rawData[matches[i].end(): matches[i + 1].start()].split("\n", maxsplit=3)[3]
 
-            metadata.append(metaDict)
+            dataDict["date"] = date
+            dataDict["title"] = title
+            dataDict["text"] = text
 
-        return metadata
+            data.append(dataDict)
+
+        return data
 
     def getNote(self, noteId):
         """Extract note text from diary.
@@ -210,35 +217,11 @@ class Diary():
             A single note's text.
 
         """
-        if not any([noteId in metaDict["note_id"] for metaDict in self.metadata]):
-            return None
+        for datum in self.data:
+            if datum["note_id"] == noteId:
+                return datum["text"]
 
-        reHeader = re.compile(
-            r"""^<!---
-                (?:\n|\r\n)
-                markdown-diary\ note\ metadata
-                (?:\n|\r\n)
-                note_id\ =\                     # Hashtag for PEP8 compiance
-                """ + noteId +
-            r"""(.*?)
-                --->
-                (?:\n|\r\n)*
-                [0-9]{4}-[0-9]{2}-[0-9]{2}      # Date in a YYYY-MM-DD format
-                (?:\n|\r\n)*
-                """, re.MULTILINE | re.VERBOSE | re.DOTALL)
-
-        reHeaderNext = re.compile(
-            r'^<!---(?:\n|\r\n)markdown-diary note metadata(?:\n|\r\n)',
-            re.MULTILINE)
-
-        header = reHeader.search(self.data)
-        nextHeader = reHeaderNext.search(self.data, header.end())
-
-        # If this is the last note in the diary, return everything that follows
-        if nextHeader is None:
-            return self.data[header.end():]
-
-        return self.data[header.end(): nextHeader.start()]
+        return None
 
     def getNoteMetadata(self, noteId):
         """Get metadata of a single note.
@@ -250,9 +233,9 @@ class Diary():
             A metadata dictionary. Returns None if noteId not found.
 
         """
-        for metaDict in self.metadata:
-            if noteId == metaDict["note_id"]:
-                return metaDict
+        for datum in self.data:
+            if noteId == datum["note_id"]:
+                return datum
 
         return None
 
@@ -267,10 +250,9 @@ class Diary():
 
         """
         matching = []
-        rePattern = re.compile(re.escape(pattern), re.IGNORECASE)
-        for metadatum in self.metadata:
-            if rePattern.search(self.getNote(metadatum["note_id"])):
-                matching.append(metadatum)
+        for datum in self.data:
+            if pattern in datum["text"]:
+                matching.append(datum)
 
         return matching
 

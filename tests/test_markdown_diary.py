@@ -19,6 +19,9 @@ noteFileName = 'tests/note.md'
 HTMLNoteFileName = 'tests/note.html'
 rawHTMLNoteFileName = 'tests/note_raw.html'
 
+def deleteTextFromData(data):
+    for datum in data:
+        del datum["text"]
 
 class DiaryTest(unittest.TestCase):
 
@@ -97,7 +100,7 @@ class DiaryTest(unittest.TestCase):
         with open(tempDiaryFileName) as f:
             diaryData = f.read()
 
-        metadata = self.diary.getMetadata(diaryData)
+        metadata = self.diary.extractData(diaryData)
 
         refMetadata = [{'version': '3',
                         'title': 'Short note',
@@ -108,6 +111,7 @@ class DiaryTest(unittest.TestCase):
                         'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000001',
                         'date': '2015-05-09'}]
 
+        deleteTextFromData(metadata)
         self.assertListEqual(metadata, refMetadata)
 
     def testGettingOfMetadataFromDiary(self):
@@ -115,7 +119,8 @@ class DiaryTest(unittest.TestCase):
         with open(diaryFileName) as f:
             diaryData = f.read()
 
-        metadata = self.diary.getMetadata(diaryData)
+        metadata = self.diary.extractData(diaryData)
+        deleteTextFromData(metadata)
 
         refMetadata = [{'version': '3',
                         'title': 'Short note',
@@ -155,6 +160,7 @@ class DiaryTest(unittest.TestCase):
 
         noteMetadata = self.diary.getNoteMetadata(
             'a3ea0c44-ed00-11e6-a9cf-c48508000000')
+        del noteMetadata["text"]
 
         refMetadata = {'version': '3',
                        'title': 'Short note',
@@ -175,7 +181,7 @@ class DiaryTest(unittest.TestCase):
 
         self.diary.updateDiaryOnDisk("A whole diary")
 
-        self.assertNotEqual(self.diary.data, "A whole diary")
+        self.assertNotEqual(self.diary.rawData, "A whole diary")
 
     def testChangeNoteDate(self):
 
@@ -194,6 +200,7 @@ class DiaryTest(unittest.TestCase):
                        'note_id': 'a3ea0c44-ed00-11e6-a9cf-c48508000000',
                        'date': '1234-05-05'}
 
+        del noteMetadata["text"]
         self.assertEqual(noteMetadata, refMetadata)
         self.assertMultiLineEqual(note, refNote)
 

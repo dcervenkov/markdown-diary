@@ -461,7 +461,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.setFocus()
         self.text.setText("# <Untitled note>")
         self.saveNote()
-        self.loadTree(self.diary.metadata)
+        self.loadTree(self.diary.data)
         self.selectItemWithoutReload(self.noteId)
 
         # Select the '<Untitled note>' part of the new note for convenient
@@ -529,7 +529,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         nextNoteId = self.tree.itemBelow(self.tree.currentItem()).text(0)
         self.diary.deleteNote(noteId)
         self.text.document().setModified(False)
-        self.loadTree(self.diary.metadata)
+        self.loadTree(self.diary.data)
         self.tree.setCurrentItem(
             self.tree.findItems(nextNoteId, QtCore.Qt.MatchExactly)[0])
 
@@ -636,10 +636,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
 
-        self.loadTree(self.diary.metadata)
+        self.loadTree(self.diary.data)
 
         # Display empty editor if the diary has no notes (e.g., new diary)
-        if not self.diary.metadata:
+        if not self.diary.data:
             self.text.clear()
             self.stack.setCurrentIndex(0)
             return
@@ -648,12 +648,12 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # did, otherwise open the newest note
         lastNoteId = ""
         for recentNote in self.recentNotes:
-            if recentNote in (metaDict["note_id"] for metaDict in self.diary.metadata):
+            if recentNote in (metaDict["note_id"] for metaDict in self.diary.data):
                 lastNoteId = recentNote
                 break
 
         if lastNoteId == "":
-            lastNoteId = self.diary.metadata[-1]["note_id"]
+            lastNoteId = self.diary.data[-1]["note_id"]
 
         self.tree.setCurrentItem(
             self.tree.findItems(lastNoteId, QtCore.Qt.MatchExactly)[0])
@@ -802,7 +802,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         text to search for is taken from the searchLine widget.
         """
         if self.searchLine.text() == "":
-            self.loadTree(self.diary.metadata)
+            self.loadTree(self.diary.data)
             self.selectItemWithoutReload(self.noteId)
             self.text.highlightSearch("")
             self.web.findText("")
@@ -867,11 +867,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         if self.diary.isValidDate(noteDate):
             self.diary.changeNoteDate(noteId, noteDate)
             self.noteDate = noteDate
-            self.loadTree(self.diary.metadata)
+            self.loadTree(self.diary.data)
             self.selectItemWithoutReload(noteId)
         else:
             print("Invalid date")
-            self.loadTree(self.diary.metadata)
+            self.loadTree(self.diary.data)
             self.selectItemWithoutReload(noteId)
 
     def selectItemWithoutReload(self, noteId):
