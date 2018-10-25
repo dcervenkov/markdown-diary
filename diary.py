@@ -251,7 +251,7 @@ class Diary():
         """
         matching = []
         for datum in self.data:
-            if pattern in datum["text"]:
+            if pattern.lower() in datum["text"].lower():
                 matching.append(datum)
 
         return matching
