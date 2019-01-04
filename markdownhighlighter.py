@@ -4,6 +4,7 @@
 # MarkdownHighlighter is a simple syntax highlighter for Markdown syntax.
 # The initial code for MarkdownHighlighter was taken from niwmarkdowneditor by John Schember
 # Copyright 2009 John Schember, Copyright 2012 Rupesh Kumar
+# LaTeX support added by Daniel Cervenkov
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +57,8 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         'CodeSpan': re.compile(u'(?P<delim>`+).+?(?P=delim)'),
         'HR': re.compile(u'(?u)^(\s*(\*|-)\s*){3,}$'),
         'eHR': re.compile(u'(?u)^(\s*(\*|=)\s*){3,}$'),
-        'Html': re.compile(u'<.+?>')
+        'Html': re.compile(u'<.+?>'),
+        'LaTeX': re.compile(u'\$+.+?\$+')
     }
 
     def __init__(self, parent):
@@ -64,7 +66,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         self.parent = parent
         self.parent.setTabStopWidth(self.parent.fontMetrics().width(' ')*8)
 
-        self.defaultTheme =  {"background-color":"#ffffff", "color":"#000000", "bold": {"color":"#859900", "font-weight":"bold", "font-style":"normal"}, "emphasis": {"color":"#b58900", "font-weight":"bold", "font-style":"italic"}, "link": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "image": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "header": {"color":"#2aa198", "font-weight":"bold", "font-style":"normal"}, "unorderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "orderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "blockquote": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codespan": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codeblock": {"color":"#ff9900", "font-weight":"normal", "font-style":"normal"}, "line": {"color":"#2aa198", "font-weight":"normal", "font-style":"normal"}, "html": {"color":"#c000c0", "font-weight":"normal", "font-style":"normal"}}
+        self.defaultTheme =  {"background-color":"#ffffff", "color":"#000000", "bold": {"color":"#859900", "font-weight":"bold", "font-style":"normal"}, "emphasis": {"color":"#b58900", "font-weight":"bold", "font-style":"italic"}, "link": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "image": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "header": {"color":"#2aa198", "font-weight":"bold", "font-style":"normal"}, "unorderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "orderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "blockquote": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codespan": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codeblock": {"color":"#ff9900", "font-weight":"normal", "font-style":"normal"}, "line": {"color":"#2aa198", "font-weight":"normal", "font-style":"normal"}, "html": {"color":"#c000c0", "font-weight":"normal", "font-style":"normal"}, "latex": {"color":"#00900d", "font-weight":"normal", "font-style":"normal"}}
         self.setTheme(self.defaultTheme)
 
     def setTheme(self, theme):
@@ -172,11 +174,18 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         format.setFontItalic(True if theme['html']['font-style']=='italic' else False)
         self.MARKDOWN_KWS_FORMAT['HTML'] = format
 
+        format = QTextCharFormat()
+        format.setForeground(QBrush(QColor(theme['latex']['color'])))
+        format.setFontWeight(QFont.Bold if theme['latex']['font-weight']=='bold' else QFont.Normal)
+        format.setFontItalic(True if theme['latex']['font-style']=='italic' else False)
+        self.MARKDOWN_KWS_FORMAT['LaTeX'] = format
+
         self.rehighlight()
 
     def highlightBlock(self, text):
         self.highlightMarkdown(text,0)
         self.highlightHtml(text)
+        self.highlightLatex(text)
 
     def highlightMarkdown(self, text, strt):
         cursor = QTextCursor(self.document())
@@ -206,11 +215,11 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
         self.highlightImage(text, cursor, bf, strt)
 
-        self.highlightCodeSpan(text, cursor, bf, strt)
-
         self.highlightEmphasis(text, cursor, bf, strt)
 
         self.highlightBold(text, cursor, bf, strt)
+
+        self.highlightCodeSpan(text, cursor, bf, strt)
 
         self.highlightCodeBlock(text, cursor, bf, strt)
 
@@ -350,3 +359,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
     def highlightHtml(self, text):
         for mo in re.finditer(self.MARKDOWN_KEYS_REGEX['Html'], text):
             self.setFormat(mo.start(), mo.end() - mo.start(), self.MARKDOWN_KWS_FORMAT['HTML'])
+
+    def highlightLatex(self, text):
+        for mo in re.finditer(self.MARKDOWN_KEYS_REGEX['LaTeX'], text):
+            self.setFormat(mo.start(), mo.end() - mo.start(), self.MARKDOWN_KWS_FORMAT['LaTeX'])
