@@ -35,4 +35,4 @@ You may want to add Markdown Diary to your application menu and/or add an icon f
 
 ## Known Issues
 
-- PyQt 5.10 crashes, printing 'Could not find QtWebEngineProcess' and a stack trace. Apparently [others](https://github.com/spyder-ide/spyder/issues/6577) have encountered a similar problem. For now, I advise you to downgrade PyQt (e.g., `pip3 install pyqt5<5.10`).
+- PyQt 5.10 crashes, printing 'Could not find QtWebEngineProcess' and a stack trace. Apparently [others](https://github.com/spyder-ide/spyder/issues/6577) have encountered a similar problem. PyQt 5.11 or newer don't have the issue. If you can't use newer PyQt, you can downgrade PyQt (e.g., `pip3 install pyqt5<5.10`).
