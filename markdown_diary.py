@@ -14,7 +14,7 @@ import datetime
 
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings
 # from PyQt5.QtCore import pyqtRemoveInputHook # enable for debugging
 
@@ -95,6 +95,37 @@ class MyQTextEdit(QtWidgets.QTextEdit):  # pylint: disable=too-few-public-method
             return True
 
         return False
+
+
+class MyWebEnginePage(QWebEnginePage):
+    """Modified QWebEnginePage that opens external links in the default system browser."""
+
+    def __init__(self, parent=None):
+        """Initialize the parent class."""
+        super().__init__(parent)
+        self.diary_path = ""
+
+    def acceptNavigationRequest(self, qurl, navtype, mainframe):
+        """Open external links in the system browser, other links in this one.
+
+        For some reason all links have 'file://' and the diary dir prepended.
+        I believe the reason is the following line in
+        displayHTMLRenderedMarkdown():
+
+        self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
+
+        We need this line in order to show images and stylesheets, which are
+        resolved relative to the baseUrl. So here we fix the link and open it
+        in the system browser.
+        """
+        # print("Navigation Request intercepted:", qurl)
+        if qurl.isLocalFile():  # delegate link to default browser
+            diary_dir_path = os.path.dirname(self.diary_path)
+            url = qurl.toString().replace('file://', 'http://').replace(diary_dir_path + '/', '')
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
+            return False
+        else:  # open in QWebEngineView
+            return True
 
 
 class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
@@ -188,6 +219,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.web = QWebEngineView(self)
         self.web.settings().setAttribute(QWebEngineSettings.FocusOnNavigationEnabled, False)
+        self.page = MyWebEnginePage()
+        self.web.setPage(self.page)
 
         self.highlighter = MarkdownHighlighter(self.text)
 
@@ -635,6 +668,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         self.updateRecentDiaries(fname)
         self.diary = diary.Diary(fname)
+
+        # Save the diary path to QWebEnginePage, so we can fix external links,
+        # which (for some reason) look like file://DIARY_PATH/EXTERNAL_LINK
+        self.page.diary_path = fname
 
         self.loadTree(self.diary.data)
 
