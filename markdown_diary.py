@@ -108,7 +108,8 @@ class MyWebEnginePage(QWebEnginePage):
     def acceptNavigationRequest(self, qurl, navtype, mainframe):
         """Open external links in the system browser, other links in this one.
 
-        For some reason all links have 'file://' and the diary dir prepended.
+        For some reason all links that don't have 'http://' or similar
+        prepended, have 'file://' and the diary dir automatically prepended.
         I believe the reason is the following line in
         displayHTMLRenderedMarkdown():
 
@@ -124,8 +125,15 @@ class MyWebEnginePage(QWebEnginePage):
             url = qurl.toString().replace('file://', 'http://').replace(diary_dir_path + '/', '')
             QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
             return False
-        else:  # open in QWebEngineView
-            return True
+        else:
+            # When setting QWebEngineView's content manually, the URL starts with 'data:text/html;'
+            if qurl.toString().startswith("data"):
+                # open in QWebEngineView
+                return True
+            else:
+                # delegate link to default browser
+                QtGui.QDesktopServices.openUrl(qurl)
+                return False
 
 
 class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
