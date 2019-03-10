@@ -40,33 +40,36 @@ from PyQt5.QtGui import QTextLayout
 class MarkdownHighlighter(QSyntaxHighlighter):
 
     MARKDOWN_KEYS_REGEX = {
-        'Bold' : re.compile(u'(?P<delim>\*\*)(?P<text>.+)(?P=delim)'),
-        'uBold': re.compile(u'(?P<delim>__)(?P<text>[^_]{2,})(?P=delim)'),
-        'Italic': re.compile(u'(?P<delim>\*)(?P<text>[^*]{2,})(?P=delim)'),
-        'uItalic': re.compile(u'(?P<delim>_)(?P<text>[^_]+)(?P=delim)'),
-        'Link': re.compile(u'(?u)(^|(?P<pre>[^!]))\[.*?\]:?[ \t]*\(?[^)]+\)?'),
-        'Image': re.compile(u'(?u)!\[.*?\]\(.+?\)'),
-        'HeaderAtx': re.compile(u'(?u)^\#{1,6}(.*?)\#*(\n|$)'),
-        'Header': re.compile(u'^(.+)[ \t]*\n(=+|-+)[ \t]*\n+'),
-        'CodeBlock': re.compile(u'^([ ]{4,}|\t).*'),
-        'UnorderedList': re.compile(u'(?u)^\s*(\* |\+ |- )+\s*'),
-        'UnorderedListStar': re.compile(u'^\s*(\* )+\s*'),
-        'OrderedList': re.compile(u'(?u)^\s*(\d+\. )\s*'),
-        'BlockQuote': re.compile(u'(?u)^\s*>+\s*'),
-        'BlockQuoteCount': re.compile(u'^[ \t]*>[ \t]?'),
-        'CodeSpan': re.compile(u'(?P<delim>`+).+?(?P=delim)'),
-        'HR': re.compile(u'(?u)^(\s*(\*|-)\s*){3,}$'),
-        'eHR': re.compile(u'(?u)^(\s*(\*|=)\s*){3,}$'),
-        'Html': re.compile(u'<.+?>'),
-        'LaTeX': re.compile(u'\$+.+?\$+')
+        'Bold' : re.compile(r'(?P<delim>\*\*)(?P<text>.+)(?P=delim)'),
+        'uBold': re.compile(r'(?P<delim>__)(?P<text>[^_]{2,})(?P=delim)'),
+        'Italic': re.compile(r'(?P<delim>\*)(?P<text>[^*]{2,})(?P=delim)'),
+        'uItalic': re.compile(r'(?P<delim>_)(?P<text>[^_]+)(?P=delim)'),
+        'Link': re.compile(r'(?u)(^|(?P<pre>[^!]))\[.*?\]:?[ \t]*\(?[^)]+\)?'),
+        'Image': re.compile(r'(?u)!\[.*?\]\(.+?\)'),
+        'HeaderAtx': re.compile(r'(?u)^\#{1,6}(.*?)\#*(\n|$)'),
+        'Header': re.compile(r'^(.+)[ \t]*\n(=+|-+)[ \t]*\n+'),
+        'CodeBlock': re.compile(r'^([ ]{4,}|\t).*'),
+        'UnorderedList': re.compile(r'(?u)^\s*(\* |\+ |- )+\s*'),
+        'UnorderedListStar': re.compile(r'^\s*(\* )+\s*'),
+        'OrderedList': re.compile(r'(?u)^\s*(\d+\. )\s*'),
+        'BlockQuote': re.compile(r'(?u)^\s*>+\s*'),
+        'BlockQuoteCount': re.compile(r'^[ \t]*>[ \t]?'),
+        'CodeSpan': re.compile(r'(?P<delim>`+).+?(?P=delim)'),
+        'HR': re.compile(r'(?u)^(\s*(\*|-)\s*){3,}$'),
+        'eHR': re.compile(r'(?u)^(\s*(\*|=)\s*){3,}$'),
+        'Html': re.compile(r'<.+?>'),
+        'LaTeX': re.compile(r'\$+.+?\$+'),
+        'MultilineCode': re.compile(r'^```.*')
     }
 
     def __init__(self, parent):
         QSyntaxHighlighter.__init__(self, parent)
         self.parent = parent
+        self.multilineCodeState = False
+        self.multilineCodeStart = False
         self.parent.setTabStopWidth(self.parent.fontMetrics().width(' ')*8)
 
-        self.defaultTheme =  {"background-color":"#ffffff", "color":"#000000", "bold": {"color":"#859900", "font-weight":"bold", "font-style":"normal"}, "emphasis": {"color":"#b58900", "font-weight":"bold", "font-style":"italic"}, "link": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "image": {"color":"#cb4b16", "font-weight":"normal", "font-style":"normal"}, "header": {"color":"#2aa198", "font-weight":"bold", "font-style":"normal"}, "unorderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "orderedlist": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "blockquote": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codespan": {"color":"#dc322f", "font-weight":"normal", "font-style":"normal"}, "codeblock": {"color":"#ff9900", "font-weight":"normal", "font-style":"normal"}, "line": {"color":"#2aa198", "font-weight":"normal", "font-style":"normal"}, "html": {"color":"#c000c0", "font-weight":"normal", "font-style":"normal"}, "latex": {"color":"#00900d", "font-weight":"normal", "font-style":"normal"}}
+        self.defaultTheme = {"background-color": "#ffffff", "color": "#000000", "bold": {"color": "#859900", "font-weight": "bold", "font-style": "normal"}, "emphasis": {"color": "#b58900", "font-weight": "bold", "font-style": "italic"}, "link": {"color": "#cb4b16", "font-weight": "normal", "font-style": "normal"}, "image": {"color": "#cb4b16", "font-weight": "normal", "font-style": "normal"}, "header": {"color": "#2aa198", "font-weight": "bold", "font-style": "normal"}, "unorderedlist": {"color": "#dc322f", "font-weight": "normal", "font-style": "normal"}, "orderedlist": {"color": "#dc322f", "font-weight": "normal", "font-style": "normal"}, "blockquote": {"color": "#dc322f", "font-weight": "normal", "font-style": "normal"}, "codespan": {"color": "#dc322f", "font-weight": "normal", "font-style": "normal"}, "codeblock": {"color": "#ff9900", "font-weight": "normal", "font-style": "normal"}, "line": {"color": "#2aa198", "font-weight": "normal", "font-style": "normal"}, "html": {"color": "#c000c0", "font-weight": "normal", "font-style": "normal"}, "latex": {"color": "#00900d", "font-weight": "normal", "font-style": "normal"}, "multilinecode": {"color": "#5d5d5d", "font-weight": "normal", "font-style": "normal"}}
         self.setTheme(self.defaultTheme)
 
     def setTheme(self, theme):
@@ -180,12 +183,19 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         format.setFontItalic(True if theme['latex']['font-style']=='italic' else False)
         self.MARKDOWN_KWS_FORMAT['LaTeX'] = format
 
+        format = QTextCharFormat()
+        format.setForeground(QBrush(QColor(theme['multilinecode']['color'])))
+        format.setFontWeight(QFont.Bold if theme['multilinecode']['font-weight']=='bold' else QFont.Normal)
+        format.setFontItalic(True if theme['multilinecode']['font-style']=='italic' else False)
+        self.MARKDOWN_KWS_FORMAT['MultilineCode'] = format
+
         self.rehighlight()
 
     def highlightBlock(self, text):
         self.highlightMarkdown(text,0)
         self.highlightHtml(text)
         self.highlightLatex(text)
+        self.highlightMultiline(text)
 
     def highlightMarkdown(self, text, strt):
         cursor = QTextCursor(self.document())
@@ -363,3 +373,17 @@ class MarkdownHighlighter(QSyntaxHighlighter):
     def highlightLatex(self, text):
         for mo in re.finditer(self.MARKDOWN_KEYS_REGEX['LaTeX'], text):
             self.setFormat(mo.start(), mo.end() - mo.start(), self.MARKDOWN_KWS_FORMAT['LaTeX'])
+
+    def highlightMultiline(self, text):
+        for mo in re.finditer(self.MARKDOWN_KEYS_REGEX['MultilineCode'], text):
+            if self.multilineCodeState == True:
+                self.multilineCodeState = False
+            else:
+                self.multilineCodeState = True
+                self.multilineCodeStart = True
+
+        if self.multilineCodeState:
+            if self.multilineCodeStart:
+                self.multilineCodeStart = False
+            else:
+                self.setFormat(0, len(text), self.MARKDOWN_KWS_FORMAT['MultilineCode'])
