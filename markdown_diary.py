@@ -103,7 +103,7 @@ class MyWebEnginePage(QWebEnginePage):
     def __init__(self, parent=None):
         """Initialize the parent class."""
         super().__init__(parent)
-        self.diary_path = ""
+        self.diaryPath = ""
 
     def acceptNavigationRequest(self, qurl, navtype, mainframe):
         """Open external links in the system browser, other links in this one.
@@ -121,8 +121,8 @@ class MyWebEnginePage(QWebEnginePage):
         """
         # print("Navigation Request intercepted:", qurl)
         if qurl.isLocalFile():  # delegate link to default browser
-            diary_dir_path = os.path.dirname(self.diary_path)
-            url = qurl.toString().replace('file://', 'http://').replace(diary_dir_path + '/', '')
+            diaryDirPath = os.path.dirname(self.diaryPath)
+            url = qurl.toString().replace('file://', 'http://').replace(diaryDirPath + '/', '')
             QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
             return False
         else:
@@ -679,7 +679,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
 
         # Save the diary path to QWebEnginePage, so we can fix external links,
         # which (for some reason) look like file://DIARY_PATH/EXTERNAL_LINK
-        self.page.diary_path = fname
+        self.page.diaryPath = fname
 
         self.loadTree(self.diary.data)
 
@@ -889,7 +889,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         else:
             self.setWindowTitle("Markdown Diary")
 
-        if hasattr(self, 'diary') and self.diary != None:
+        if hasattr(self, 'diary') and self.diary is not None:
             self.setWindowTitle(self.windowTitle() + " - " +
                                 os.path.basename(self.diary.fname))
 
