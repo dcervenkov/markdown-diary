@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.1 -->
+<interface>
+  <requires lib="gtk+" version="3.10"/>
+  <requires lib="gtksourceview" version="3.0"/>
+  <requires lib="webkit2gtk" version="2.12"/>
+  <object class="GtkImage" id="image-delete">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-delete</property>
+    <property name="icon_size">3</property>
+  </object>
+  <object class="GtkImage" id="image-edit">
+    <property name="name">edit_button</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-edit</property>
+    <property name="icon_size">3</property>
+  </object>
+  <object class="GtkImage" id="image-new">
+    <property name="name">new_button</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-new</property>
+    <property name="icon_size">3</property>
+  </object>
+  <object class="GtkImage" id="image-save">
+    <property name="name">save_button</property>
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-save</property>
+    <property name="icon_size">3</property>
+  </object>
+  <object class="GtkListStore" id="liststore">
+    <columns>
+      <!-- column-name Date -->
+      <column type="gchararray"/>
+      <!-- column-name Title -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">2019-10-09</col>
+        <col id="1" translatable="yes">Test Note</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">2018-01-01</col>
+        <col id="1" translatable="yes">Another Test Note</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkApplicationWindow" id="main_window">
+    <property name="name">main_window</property>
+    <property name="can_focus">False</property>
+    <property name="default_width">1000</property>
+    <property name="default_height">600</property>
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="headerbar">
+        <property name="name">headerbar</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="title" translatable="yes">Markdown DIary</property>
+        <property name="subtitle" translatable="yes">diary.md</property>
+        <property name="show_close_button">True</property>
+        <child>
+          <object class="GtkToggleButton" id="edit_button">
+            <property name="name">edit_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="image">image-edit</property>
+            <property name="relief">none</property>
+            <property name="always_show_image">True</property>
+            <signal name="toggled" handler="edit_toggle" swapped="no"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="new_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="image">image-new</property>
+            <property name="always_show_image">True</property>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="save_button">
+            <property name="name">save_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="image">image-save</property>
+            <property name="always_show_image">True</property>
+          </object>
+          <packing>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="delete_button">
+            <property name="name">delete_button</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="image">image-delete</property>
+            <property name="always_show_image">True</property>
+          </object>
+          <packing>
+            <property name="position">3</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkPaned" id="paned">
+        <property name="name">paned</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="position">800</property>
+        <property name="position_set">True</property>
+        <property name="wide_handle">True</property>
+        <child>
+          <object class="GtkStack" id="stack">
+            <property name="name">stack</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkScrolledWindow" id="text_scroll">
+                <property name="name">text_scroll</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkSourceView" id="text">
+                    <property name="name">text</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="wrap_mode">char</property>
+                    <property name="left_margin">2</property>
+                    <property name="right_margin">2</property>
+                    <property name="show_line_numbers">True</property>
+                    <property name="tab_width">2</property>
+                    <property name="auto_indent">True</property>
+                    <property name="highlight_current_line">True</property>
+                    <property name="draw_spaces">GTK_SOURCE_DRAW_SPACES_TRAILING</property>
+                    <property name="smart_backspace">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="name">text</property>
+                <property name="title" translatable="yes">text</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow" id="web_scroll">
+                <property name="name">web_scroll</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkViewport" id="web_viewport">
+                    <property name="name">web_viewport</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="WebKitWebView" id="web">
+                        <property name="name">web</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="name">web</property>
+                <property name="title" translatable="yes">web</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="resize">False</property>
+            <property name="shrink">True</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <object class="GtkTreeView" id="tree">
+                <property name="name">tree</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="model">liststore</property>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection"/>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="resize">True</property>
+            <property name="shrink">True</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
