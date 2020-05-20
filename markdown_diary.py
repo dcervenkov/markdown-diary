@@ -219,6 +219,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.initToolbar()
         self.initMenu()
 
+        self.shortcutFindNext = QtWidgets.QShortcut(QtGui.QKeySequence('F3'), self)
+        self.shortcutFindNext.activated.connect(self.searchNext)
+
         self.text = MyQTextEdit(self)
         self.text.setAcceptRichText(False)
         self.text.setFont(QtGui.QFont(
