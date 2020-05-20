@@ -33,6 +33,8 @@
   </object>
   <object class="GtkListStore" id="liststore">
     <columns>
+      <!-- column-name ID -->
+      <column type="gchararray"/>
       <!-- column-name Date -->
       <column type="gchararray"/>
       <!-- column-name Title -->
@@ -40,12 +42,14 @@
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes">2019-10-09</col>
-        <col id="1" translatable="yes">Test Note</col>
+        <col id="0" translatable="yes">132-asdf-s3d21f</col>
+        <col id="1" translatable="yes">2019-10-09</col>
+        <col id="2" translatable="yes">Test Note</col>
       </row>
       <row>
-        <col id="0" translatable="yes">2018-01-01</col>
-        <col id="1" translatable="yes">Another Test Note</col>
+        <col id="0" translatable="yes">654asd-dsf65-sdf</col>
+        <col id="1" translatable="yes">2018-01-01</col>
+        <col id="2" translatable="yes">Another Test Note</col>
       </row>
     </data>
   </object>
@@ -202,8 +206,38 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="model">liststore</property>
+                <property name="enable_grid_lines">vertical</property>
                 <child internal-child="selection">
                   <object class="GtkTreeSelection"/>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="tree_date">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Date</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">1</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="date_renderer"/>
+                      <attributes>
+                        <attribute name="text">1</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="tree_title">
+                    <property name="title" translatable="yes">Title</property>
+                    <property name="clickable">True</property>
+                    <property name="sort_indicator">True</property>
+                    <property name="sort_column_id">2</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="title_renderer"/>
+                      <attributes>
+                        <attribute name="text">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
                 </child>
               </object>
             </child>

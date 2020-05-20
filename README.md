@@ -10,14 +10,19 @@ A simple Markdown note taking application.
 ## Installation
 
 You need python3 with the following libraries: 
- - `pyqt5` Qt5 and its Python bindings
- - `pyqtwebengine` Qt5 web renderer and its Python bindings
+You need the following requirements:
+ - `python3-gi`
+ - `gobject-introspection`
+ - `gir1.2-gtksource-3.0`
+ - `gir1.2-webkit-3.0`
+
  - `mistune` Markdown parser
  - `pygments` syntax highlighter
 
-You can install them easily using `pip3` 
+You can install them easily using `apt` and `pip3` 
 ```
-pip3 install pyqt5 pyqtwebengine pygments mistune
+apt install python3-gi gobject-introspection gir1.2-gtksource-3.0 gir1.2-webkit-3.0
+pip3 install pygments mistune
 ```
 
 ## Desktop Integration
@@ -35,5 +40,4 @@ You may want to add Markdown Diary to your application menu and/or add an icon f
 
 ## Known Issues
 
-- PyQt 5.10 crashes, printing 'Could not find QtWebEngineProcess' and a stack trace. Apparently [others](https://github.com/spyder-ide/spyder/issues/6577) have encountered a similar problem. PyQt 5.11 or newer doesn't have the issue. If you can't use newer PyQt, you can downgrade PyQt (e.g., `pip3 install pyqt5<5.10`).
-- Since PyQt 5.12, QtWebEngine was moved out of the `pyqt5` package into `pyqtwebengine` (see [here](https://www.riverbankcomputing.com/news/pyqt-512)). If you are using PyQt 5.11 or lower, there is no need to install `pyqtwebengine`.
+None so far. Please report on Github if you found any.
