@@ -229,6 +229,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.web.settings().setAttribute(QWebEngineSettings.FocusOnNavigationEnabled, False)
         self.page = MyWebEnginePage()
         self.web.setPage(self.page)
+        self.web.loadFinished.connect(self.webLoadFinished)
 
         self.highlighter = MarkdownHighlighter(self.text)
 
@@ -302,7 +303,7 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.quitAction.setMenuRole(QtWidgets.QAction.QuitRole)
         self.quitAction.setShortcut(QtGui.QKeySequence.Quit)
         self.quitAction.triggered.connect(
-            lambda: self.close()) # pylint: disable=unnecessary-lambda
+            lambda: self.close())  # pylint: disable=unnecessary-lambda
 
         self.deleteNoteAction = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("remove"), "Delete Note", self)
@@ -438,10 +439,8 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             self.stack.setCurrentIndex(0)
         else:
             self.stack.setCurrentIndex(1)
-            self.displayHTMLRenderedMarkdown(self.text.toPlainText())
-            if self.searchLine.text() != "":
-                # Search in the WebView
-                self.web.findText(self.searchLine.text())
+            if (self.text.document().isModified()):
+                self.displayHTMLRenderedMarkdown(self.text.toPlainText())
 
     def createHTML(self, markdownText):
         """Create full, valid HTML from Markdown source.
@@ -484,10 +483,6 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         # with respect to the baseUrl
         mainPath = self.diary.fname
         self.web.setHtml(html, baseUrl=QtCore.QUrl.fromLocalFile(mainPath))
-
-        if self.searchLine.text() != "":
-            # Search in the WebView
-            self.web.findText(self.searchLine.text())
 
     def newNote(self):
         """Create an empty note and add it to the QTreeWidget.
@@ -819,11 +814,9 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.displayNote(newNoteId)
 
         if self.searchLine.text() != "":
-            # Search in the editor
+            # Search in the editor (searching in WebView happens
+            # asynchronously, once the page is loaded)
             self.text.highlightSearch(self.searchLine.text())
-
-            # Search in the WebView
-            self.web.findText(self.searchLine.text())
 
     def displayNote(self, noteId):
         """Display a specified note."""
@@ -972,6 +965,11 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
             pageLayout = QtGui.QPageLayout(QtGui.QPageSize(
                 QtGui.QPageSize.A4), QtGui.QPageLayout.Landscape, QtCore.QMarginsF(0, 0, 0, 0))
             self.web.page().printToPdf(fname, pageLayout)
+
+    def webLoadFinished(self):
+        if self.searchLine.text() != "":
+            # Search in the WebView
+            self.web.findText(self.searchLine.text())
 
     def __del__(self):
         """Clean up temporary files on exit."""
