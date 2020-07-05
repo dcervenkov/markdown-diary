@@ -527,6 +527,10 @@ class DiaryApp(QtWidgets.QMainWindow):  # pylint: disable=too-many-public-method
         self.text.document().setModified(False)
         self.setTitle()
 
+        # Rerender the HTML since we removed the modified flag from
+        # self.text.document()
+        self.displayHTMLRenderedMarkdown(self.text.toPlainText())
+
         # Change the title in the tree, without reloading the tree (that would
         # cause the filtered results when searching to be lost)
         self.tree.blockSignals(True)
